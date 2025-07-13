@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBS Holdings プレゼンテーション</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #0a192f;
+            overflow: hidden;
+            cursor: none; /* デフォルトカーソルを隠す */
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #slideContent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .slide-frame {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform-origin: center center;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        /* マウスイベント捕捉用のオーバーレイ */
+        .mouse-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            pointer-events: auto;
+            background: transparent;
+        }
+        
+        
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10000; /* オーバーレイより上に配置 */
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            cursor: auto; /* コントロール部分ではデフォルトカーソルを表示 */
+        }
+        
+        .control-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .control-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #pageIndicator {
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            background: rgba(59, 130, 246, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a192f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-text {
+            color: #3b82f6;
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .transition-overlay.active {
+            opacity: 1;
+        }
+        
+        /* カスタムマウスポインタ */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ff0000 0%, #ff4444 50%, transparent 70%);
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10001; /* オーバーレイより上に配置 */
+            mix-blend-mode: screen;
+            transform: translate(-50%, -50%);
+            transition: none;
+            opacity: 0;
+        }
+        
+        .custom-cursor.clicked {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: radial-gradient(circle, #ff6666 0%, #ff8888 50%, transparent 70%);
+        }
+        
+        /* マウス軌跡 */
+        .mouse-trail {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 0, 0, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000; /* オーバーレイより上に配置 */
+            transform: translate(-50%, -50%);
+        }
+        
+        /* 描画キャンバス */
+        #drawingCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 500; /* マウスオーバーレイより下、スライドより上 */
+            pointer-events: none;
+            transform-origin: center center;
+            /* transition: transform 0.3s ease; アニメーション削除 */
+        }
+        
+        /* 軌跡のアニメーション */
+        @keyframes trailFade {
+            0% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.3);
+            }
+        }
+        
+        .trail-fade {
+            animation: trailFade 0.8s ease-out forwards;
+        }
+        
+        /* ズームインジケーター */
+        #zoomIndicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        #zoomIndicator.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="loading-text">プレゼンテーションを準備中...</div>
+    </div>
+    
+    <div id="container">
+        <div id="slideContent">
+            <iframe id="currentSlide" class="slide-frame" src="01.html"></iframe>
+        </div>
+        <div class="transition-overlay" id="transitionOverlay"></div>
+    </div>
+    
+    <!-- マウスイベント捕捉用のオーバーレイ -->
+    <div class="mouse-overlay" id="mouseOverlay"></div>
+    
+    <div id="controls">
+        <button class="control-btn" id="prevBtn">◀ 前へ</button>
+        <div id="pageIndicator">1 / 32</div>
+        <button class="control-btn" id="nextBtn">次へ ▶</button>
+        <button class="control-btn" id="fullscreenBtn">全画面</button>
+    </div>
+    
+    <!-- カスタムマウスカーソル -->
+    <div class="custom-cursor" id="customCursor"></div>
+    
+    <!-- ズームインジケーター -->
+    <div id="zoomIndicator">100%</div>
+    
+    <!-- 描画キャンバス -->
+    <canvas id="drawingCanvas"></canvas>
+
+    <script>
+        // Electron環境での初期化
+        if (window.electronAPI) {
+            // Electronのメッセージリスナーを設定
+            window.electronAPI.onNextSlide(() => {
+                if (window.presentationApp) {
+                    window.presentationApp.nextSlide();
+                }
+            });
+            
+            window.electronAPI.onPrevSlide(() => {
+                if (window.presentationApp) {
+                    window.presentationApp.previousSlide();
+                }
+            });
+            
+            window.electronAPI.onFirstSlide(() => {
+                if (window.presentationApp) {
+                    window.presentationApp.goToSlide(1);
+                }
+            });
+            
+            window.electronAPI.onLastSlide(() => {
+                if (window.presentationApp) {
+                    window.presentationApp.goToSlide(window.presentationApp.totalSlides);
+                }
+            });
+        }
+
+        class PresentationApp {
+            constructor() {
+                this.config = null;
+                this.currentSlide = 1;
+                this.totalSlides = 32; // デフォルト値、設定ファイルで上書き
+                this.htmlFiles = [];
+                this.isTransitioning = false;
+                
+                // レンダリングサイズ情報
+                this.slideActualSize = { width: 1280, height: 720 };
+                this.resizeObserver = null;
+                this.isSlideLoaded = false;
+                
+                // マウス関連
+                this.mouseTracker = null;
+                
+                // ズーム関連
+                this.currentZoom = 1;
+                this.zoomStep = 0.2;
+                this.maxZoom = 3;
+                this.minZoom = 0.5;
+                this.isZoomed = false;
+                this.zoomFactor = 2; // 右クリック時の拡大倍率
+                this.zoomCenter = { x: 0, y: 0 }; // ズーム中心座標
+                this.panOffset = { x: 0, y: 0 }; // パン（移動）オフセット
+                this.scrollSensitivity = 30; // ホイールスクロールの感度
+                
+                // 描画関連
+                this.drawingManager = null;
+                this.isDrawingMode = false;
+                this.lastZoomState = false; // 前回のズーム状態を記録
+                
+                this.init();
+            }
+            
+            async loadConfig() {
+                try {
+                    const response = await fetch('config.json');
+                    this.config = await response.json();
+                } catch (error) {
+                    console.warn('設定ファイルが読み込めません。デフォルト設定を使用します:', error);
+                    this.config = this.getDefaultConfig();
+                }
+            }
+            
+            getDefaultConfig() {
+                return {
+                    presentation: {
+                        title: "プレゼンテーション",
+                        slideDirectory: "./slides",
+                        slidePattern: "*.html",
+                        totalSlides: null,
+                        autoDetectSlides: true,
+                        supportedFormats: [".html", ".htm"],
+                        defaultSlideSize: { width: 1280, height: 720 }
+                    },
+                    ui: {
+                        theme: {
+                            backgroundColor: "#0a192f",
+                            controlsBackground: "rgba(0, 0, 0, 0.7)",
+                            primaryColor: "#3b82f6",
+                            textColor: "white"
+                        },
+                        controls: {
+                            showNavigationButtons: true,
+                            showPageIndicator: true,
+                            showFullscreenButton: true,
+                            position: "bottom"
+                        },
+                        cursor: {
+                            enabled: true,
+                            color: "#ff0000",
+                            size: 20,
+                            trailEnabled: true,
+                            trailLength: 20
+                        }
+                    },
+                    zoom: {
+                        enabled: true,
+                        factor: 2,
+                        maxZoom: 3,
+                        minZoom: 0.5,
+                        step: 0.2,
+                        scrollSensitivity: 30
+                    },
+                    drawing: {
+                        enabled: true,
+                        lineColor: "#ff0000",
+                        lineWidth: 3,
+                        fadeTimeout: 3000,
+                        maxLines: 50
+                    },
+                    transitions: {
+                        type: "dissolve",
+                        duration: 500,
+                        enabled: true
+                    },
+                    keyboard: {
+                        nextSlide: ["ArrowRight", "Space"],
+                        prevSlide: ["ArrowLeft"],
+                        firstSlide: ["Home"],
+                        lastSlide: ["End"],
+                        fullscreen: ["f", "F"],
+                        zoomIn: ["+", "="],
+                        zoomOut: ["-", "_"],
+                        resetZoom: ["0"]
+                    }
+                };
+            }
+            
+            applyConfig() {
+                // タイトル設定
+                document.title = this.config.presentation.title;
+                
+                // テーマ設定
+                const body = document.body;
+                body.style.background = this.config.ui.theme.backgroundColor;
+                
+                // ズーム設定
+                this.zoomFactor = this.config.zoom.factor;
+                this.maxZoom = this.config.zoom.maxZoom;
+                this.minZoom = this.config.zoom.minZoom;
+                this.zoomStep = this.config.zoom.step;
+                this.scrollSensitivity = this.config.zoom.scrollSensitivity;
+                
+                // スライドサイズ設定
+                this.slideActualSize = { ...this.config.presentation.defaultSlideSize };
+            }
+            
+            detectSlides() {
+                if (this.config.presentation.autoDetectSlides) {
+                    // 自動検出の場合、01.html-99.htmlの範囲で存在するファイルを検出
+                    this.autoDetectSlideFiles();
+                } else {
+                    // 固定数の場合
+                    this.generateFileList();
+                }
+            }
+            
+            async autoDetectSlideFiles() {
+                const files = [];
+                let foundFiles = 0;
+                
+                // 01.html から 99.html まで順次チェック
+                for (let i = 1; i <= 99; i++) {
+                    const num = i.toString().padStart(2, '0');
+                    const filename = `${num}.html`;
+                    
+                    try {
+                        const response = await fetch(filename, { method: 'HEAD' });
+                        if (response.ok) {
+                            files.push(filename);
+                            foundFiles++;
+                        } else if (foundFiles > 0 && i > foundFiles + 5) {
+                            // ファイルが見つからず、最後に見つかったファイルから5個以上空いた場合は終了
+                            break;
+                        }
+                    } catch (error) {
+                        if (foundFiles > 0 && i > foundFiles + 5) {
+                            break;
+                        }
+                    }
+                }
+                
+                this.htmlFiles = files;
+                this.totalSlides = files.length;
+                
+                if (this.totalSlides === 0) {
+                    console.warn('スライドファイルが見つかりません。デフォルト設定を使用します。');
+                    this.generateFileList();
+                }
+            }
+            
+            generateFileList() {
+                const files = [];
+                const totalSlides = this.config.presentation.totalSlides || 32;
+                for (let i = 1; i <= totalSlides; i++) {
+                    const num = i.toString().padStart(2, '0');
+                    files.push(`${num}.html`);
+                }
+                this.htmlFiles = files;
+                this.totalSlides = totalSlides;
+            }
+            
+            async init() {
+                await this.loadConfig();
+                this.applyConfig();
+                this.detectSlides();
+                this.setupEventListeners();
+                this.setupResizeObserver();
+                this.setupMouseTracker();
+                this.setupDrawingManager();
+                await this.loadSlide(this.currentSlide);
+                this.hideLoadingScreen();
+                this.updateControls();
+            }
+            
+            setupResizeObserver() {
+                // ResizeObserverでコンテナサイズの変更を監視
+                if (window.ResizeObserver) {
+                    this.resizeObserver = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            if (entry.target.id === 'slideContent') {
+                                this.debounceResize();
+                            }
+                        }
+                    });
+                    
+                    const slideContent = document.getElementById('slideContent');
+                    this.resizeObserver.observe(slideContent);
+                }
+            }
+            
+            debounceResize() {
+                clearTimeout(this.resizeTimeout);
+                this.resizeTimeout = setTimeout(() => {
+                    if (this.isSlideLoaded) {
+                        this.resizeSlide();
+                    }
+                }, 100);
+            }
+            
+            setupMouseTracker() {
+                this.mouseTracker = new MouseTracker();
+            }
+            
+            setupDrawingManager() {
+                this.drawingManager = new DrawingManager();
+            }
+            
+            async loadSlide(slideNumber) {
+                const iframe = document.getElementById('currentSlide');
+                const fileName = this.htmlFiles[slideNumber - 1];
+                
+                this.isSlideLoaded = false;
+                
+                return new Promise((resolve) => {
+                    iframe.onload = () => {
+                        // スライドが完全にレンダリングされるまで待機
+                        setTimeout(() => {
+                            this.measureSlideSize(iframe);
+                            this.resizeSlide();
+                            this.isSlideLoaded = true;
+                            resolve();
+                        }, 300);
+                    };
+                    iframe.src = fileName;
+                });
+            }
+            
+            measureSlideSize(iframe) {
+                try {
+                    // iframe内のドキュメントのサイズを測定
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const slideContainer = iframeDoc.querySelector('.slide-container');
+                    
+                    if (slideContainer) {
+                        const computedStyle = window.getComputedStyle(slideContainer);
+                        this.slideActualSize.width = parseInt(computedStyle.width) || 1280;
+                        this.slideActualSize.height = parseInt(computedStyle.height) || 720;
+                    } else {
+                        // フォールバック: デフォルトサイズ
+                        this.slideActualSize.width = 1280;
+                        this.slideActualSize.height = 720;
+                    }
+                } catch (error) {
+                    // クロスオリジン制限等でアクセスできない場合はデフォルト値を使用
+                    console.warn('Cannot measure slide size, using default:', error);
+                    this.slideActualSize.width = 1280;
+                    this.slideActualSize.height = 720;
+                }
+            }
+            
+            resizeSlide() {
+                const iframe = document.getElementById('currentSlide');
+                const container = document.getElementById('slideContent');
+                
+                if (!iframe || !container) return;
+                
+                // コンテナの利用可能サイズ（パディング分を除く）
+                const availableWidth = container.clientWidth - 40;
+                const availableHeight = container.clientHeight - 40;
+                
+                // 実際のスライドサイズを使用
+                const slideWidth = this.slideActualSize.width;
+                const slideHeight = this.slideActualSize.height;
+                const slideAspectRatio = slideWidth / slideHeight;
+                const containerAspectRatio = availableWidth / availableHeight;
+                
+                let baseScale;
+                
+                // 画面からはみ出さないように、より制約の厳しい方に合わせる
+                if (containerAspectRatio > slideAspectRatio) {
+                    // コンテナが横長の場合、高さに合わせる
+                    baseScale = availableHeight / slideHeight;
+                } else {
+                    // コンテナが縦長の場合、幅に合わせる
+                    baseScale = availableWidth / slideWidth;
+                }
+                
+                // 念のため、両方向で制限をチェック
+                const scaledWidth = slideWidth * baseScale;
+                const scaledHeight = slideHeight * baseScale;
+                
+                if (scaledWidth > availableWidth) {
+                    baseScale = availableWidth / slideWidth;
+                }
+                if (scaledHeight > availableHeight) {
+                    baseScale = Math.min(baseScale, availableHeight / slideHeight);
+                }
+                
+                let finalScale, transformOrigin, translateX = 0, translateY = 0;
+                
+                if (this.isZoomed) {
+                    // 2倍ズーム時
+                    finalScale = baseScale * this.zoomFactor;
+                    
+                    // マウス位置を中心にした変換原点とパン計算
+                    const containerRect = container.getBoundingClientRect();
+                    const relativeX = (this.zoomCenter.x - containerRect.left) / containerRect.width;
+                    const relativeY = (this.zoomCenter.y - containerRect.top) / containerRect.height;
+                    
+                    transformOrigin = `${relativeX * 100}% ${relativeY * 100}%`;
+                    
+                    // パンオフセットを適用
+                    translateX = this.panOffset.x;
+                    translateY = this.panOffset.y;
+                } else {
+                    // 通常表示
+                    finalScale = baseScale * this.currentZoom;
+                    transformOrigin = 'center center';
+                }
+                
+                // iframeのサイズを実際のスライドサイズに設定
+                iframe.style.width = slideWidth + 'px';
+                iframe.style.height = slideHeight + 'px';
+                
+                // スケールと変換を適用
+                iframe.style.transform = `translate(${translateX}px, ${translateY}px) scale(${finalScale})`;
+                iframe.style.transformOrigin = transformOrigin;
+                
+                console.log(`Container: ${availableWidth}x${availableHeight}, Slide: ${slideWidth}x${slideHeight}, BaseScale: ${baseScale.toFixed(3)}, Zoom: ${this.isZoomed ? this.zoomFactor : this.currentZoom}, FinalScale: ${finalScale.toFixed(3)}`);
+            }
+            
+            zoomIn() {
+                if (this.currentZoom < this.maxZoom) {
+                    this.currentZoom = Math.min(this.currentZoom + this.zoomStep, this.maxZoom);
+                    this.resizeSlide();
+                    this.showZoomIndicator();
+                }
+            }
+            
+            zoomOut() {
+                if (this.currentZoom > this.minZoom) {
+                    this.currentZoom = Math.max(this.currentZoom - this.zoomStep, this.minZoom);
+                    this.resizeSlide();
+                    this.showZoomIndicator();
+                }
+            }
+            
+            resetZoom() {
+                this.currentZoom = 1;
+                this.resizeSlide();
+                this.showZoomIndicator();
+            }
+            
+            toggleZoom(mouseX, mouseY) {
+                const previousZoomState = this.isZoomed;
+                
+                if (this.isZoomed) {
+                    // ズームアウト
+                    this.isZoomed = false;
+                    this.panOffset = { x: 0, y: 0 };
+                    this.showZoomIndicator(100);
+                } else {
+                    // ズームイン
+                    this.isZoomed = true;
+                    this.zoomCenter = { x: mouseX, y: mouseY };
+                    this.panOffset = { x: 0, y: 0 };
+                    this.showZoomIndicator(200);
+                }
+                
+                this.resizeSlide();
+                
+                // 描画キャンバスのズーム状態を更新
+                if (this.drawingManager) {
+                    this.drawingManager.updateCanvasZoom(this.isZoomed, this.zoomFactor, this.zoomCenter, this.panOffset);
+                }
+                
+                this.lastZoomState = this.isZoomed;
+            }
+            
+            // 拡大時のパン機能は削除（描画機能との競合回避）
+            
+            handleWheelScroll(deltaY) {
+                if (!this.isZoomed) return;
+                
+                // ホイールの上下移動をパンオフセットのy成分に反映
+                this.panOffset.y -= deltaY * (this.scrollSensitivity / 100);
+                
+                // スクロール範囲を制限（オプション）
+                const maxScroll = 200; // 最大スクロール量
+                this.panOffset.y = Math.max(-maxScroll, Math.min(maxScroll, this.panOffset.y));
+                
+                this.resizeSlide();
+                
+                // 描画キャンバスも更新
+                if (this.drawingManager) {
+                    this.drawingManager.updateCanvasZoom(this.isZoomed, this.zoomFactor, this.zoomCenter, this.panOffset);
+                }
+            }
+            
+            showZoomIndicator(percentage) {
+                const indicator = document.getElementById('zoomIndicator');
+                if (indicator) {
+                    indicator.textContent = percentage + '%';
+                    indicator.classList.add('show');
+                    
+                    // 2秒後に非表示
+                    clearTimeout(this.zoomIndicatorTimeout);
+                    this.zoomIndicatorTimeout = setTimeout(() => {
+                        indicator.classList.remove('show');
+                    }, 2000);
+                }
+            }
+            
+            async transitionToSlide(targetSlide, direction = 'next') {
+                if (this.isTransitioning) return;
+                this.isTransitioning = true;
+                
+                const currentIframe = document.getElementById('currentSlide');
+                
+                // ディゾルブエフェクトで遷移
+                await this.dissolveTransition(currentIframe, targetSlide);
+                
+                this.currentSlide = targetSlide;
+                this.isTransitioning = false;
+                this.updateControls();
+            }
+            
+            async dissolveTransition(currentIframe, targetSlide) {
+                return new Promise(async (resolve) => {
+                    // フェードアウト
+                    currentIframe.style.opacity = '0';
+                    
+                    // 0.5秒後に新しいスライドをロード
+                    setTimeout(async () => {
+                        await this.loadSlide(targetSlide);
+                        
+                        // フェードイン
+                        currentIframe.style.opacity = '1';
+                        
+                        setTimeout(resolve, 500);
+                    }, 500);
+                });
+            }
+            
+            
+            setupEventListeners() {
+                document.getElementById('prevBtn').addEventListener('click', () => {
+                    this.previousSlide();
+                });
+                
+                document.getElementById('nextBtn').addEventListener('click', () => {
+                    this.nextSlide();
+                });
+                
+                document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+                
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowRight':
+                        case ' ':
+                            e.preventDefault();
+                            this.nextSlide();
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            this.previousSlide();
+                            break;
+                        case 'Escape':
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen();
+                            }
+                            break;
+                        case 'f':
+                        case 'F':
+                            this.toggleFullscreen();
+                            break;
+                        case '+':
+                        case '=':
+                            e.preventDefault();
+                            this.zoomIn();
+                            break;
+                        case '-':
+                        case '_':
+                            e.preventDefault();
+                            this.zoomOut();
+                            break;
+                        case '0':
+                            e.preventDefault();
+                            this.resetZoom();
+                            break;
+                    }
+                });
+                
+                window.addEventListener('resize', () => {
+                    this.debounceResize();
+                });
+                
+                // ホイールイベントでズーム時のスクロール
+                window.addEventListener('wheel', (e) => {
+                    if (this.isZoomed) {
+                        e.preventDefault();
+                        this.handleWheelScroll(e.deltaY);
+                    }
+                }, { passive: false });
+            }
+            
+            async nextSlide() {
+                if (this.currentSlide < this.totalSlides && !this.isTransitioning) {
+                    await this.transitionToSlide(this.currentSlide + 1, 'next');
+                }
+            }
+            
+            async previousSlide() {
+                if (this.currentSlide > 1 && !this.isTransitioning) {
+                    await this.transitionToSlide(this.currentSlide - 1, 'prev');
+                }
+            }
+            
+            updateControls() {
+                document.getElementById('prevBtn').disabled = this.currentSlide === 1;
+                document.getElementById('nextBtn').disabled = this.currentSlide === this.totalSlides;
+                document.getElementById('pageIndicator').textContent = `${this.currentSlide} / ${this.totalSlides}`;
+                
+                // Electronにスライド変更を通知
+                if (window.electronAPI) {
+                    window.electronAPI.sendSlideChanged(this.currentSlide);
+                }
+            }
+            
+            goToSlide(slideNumber) {
+                if (slideNumber >= 1 && slideNumber <= this.totalSlides && slideNumber !== this.currentSlide) {
+                    const direction = slideNumber > this.currentSlide ? 'next' : 'prev';
+                    this.transitionToSlide(slideNumber, direction);
+                }
+            }
+            
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            
+            hideLoadingScreen() {
+                const loadingScreen = document.getElementById('loadingScreen');
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }
+            
+        }
+        
+        // 描画管理クラス
+        class DrawingManager {
+            constructor() {
+                this.canvas = document.getElementById('drawingCanvas');
+                this.ctx = null;
+                this.isDrawing = false;
+                this.lastPos = { x: 0, y: 0 };
+                this.drawnLines = [];
+                this.drawingMode = false;
+                // 設定ファイルからフェードタイムアウトを取得
+                const app = window.presentationApp;
+                this.fadeTimeout = app && app.config ? app.config.drawing.fadeTimeout : 3000;
+                
+                if (!this.canvas) {
+                    console.error('Drawing canvas not found');
+                    return;
+                }
+                
+                this.init();
+            }
+            
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resizeCanvas();
+                this.setupEventListeners();
+                
+                // リサイズ時にキャンバスもリサイズ
+                window.addEventListener('resize', () => {
+                    this.resizeCanvas();
+                });
+                
+                // 初期状態ではズームなし
+                this.updateCanvasZoom(false, 1, { x: 0, y: 0 }, { x: 0, y: 0 });
+            }
+            
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                
+                // 描画設定（設定ファイルから取得）
+                if (this.ctx) {
+                    const app = window.presentationApp;
+                    const drawingConfig = app && app.config ? app.config.drawing : {
+                        lineColor: '#ff0000',
+                        lineWidth: 3
+                    };
+                    
+                    this.ctx.strokeStyle = drawingConfig.lineColor;
+                    this.ctx.lineWidth = drawingConfig.lineWidth;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.lineJoin = 'round';
+                }
+            }
+            
+            setupEventListeners() {
+                // マウスオーバーレイでドラッグイベントを捕捉
+                const overlay = document.getElementById('mouseOverlay');
+                if (!overlay) return;
+                
+                overlay.addEventListener('mousedown', (e) => {
+                    // 左クリックでドラッグ開始（右クリックはズーム用なので除外）
+                    if (e.button === 0) {
+                        this.startDrawing(e.clientX, e.clientY);
+                    }
+                });
+                
+                overlay.addEventListener('mousemove', (e) => {
+                    if (this.isDrawing) {
+                        this.draw(e.clientX, e.clientY);
+                        e.stopPropagation(); // 描画中はパンを無効化
+                    }
+                });
+                
+                overlay.addEventListener('mouseup', (e) => {
+                    if (this.isDrawing) {
+                        this.stopDrawing();
+                    }
+                });
+                
+                // ドラッグが画面外に出た場合も描画終了
+                document.addEventListener('mouseup', () => {
+                    if (this.isDrawing) {
+                        this.stopDrawing();
+                    }
+                });
+            }
+            
+            startDrawing(x, y) {
+                this.isDrawing = true;
+                this.lastPos = { x, y };
+                this.canvas.style.pointerEvents = 'auto';
+                
+                // スクリーン座標をキャンバス座標に変換
+                const canvasCoords = this.screenToCanvasCoords(x, y);
+                
+                // 新しい線の開始
+                this.ctx.beginPath();
+                this.ctx.moveTo(canvasCoords.x, canvasCoords.y);
+            }
+            
+            draw(x, y) {
+                if (!this.isDrawing) return;
+                
+                // スクリーン座標をキャンバス座標に変換（ズーム状態に関係なく統一した座標系で描画）
+                const canvasCoords = this.screenToCanvasCoords(x, y);
+                
+                this.ctx.lineTo(canvasCoords.x, canvasCoords.y);
+                this.ctx.stroke();
+                
+                this.lastPos = { x, y };
+            }
+            
+            stopDrawing() {
+                if (!this.isDrawing) return;
+                
+                this.isDrawing = false;
+                this.canvas.style.pointerEvents = 'none';
+                
+                // 描画終了後、一定時間で消える処理を設定
+                this.scheduleLineFade();
+            }
+            
+            scheduleLineFade() {
+                // 現在のキャンバス状態を保存
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const fadeStartTime = Date.now();
+                
+                setTimeout(() => {
+                    this.fadeOut(imageData, fadeStartTime);
+                }, this.fadeTimeout);
+            }
+            
+            fadeOut(imageData, fadeStartTime) {
+                const fadeData = this.ctx.createImageData(imageData);
+                const data = fadeData.data;
+                const originalData = imageData.data;
+                
+                // フェードアウトアニメーション
+                let opacity = 1;
+                const fadeStep = () => {
+                    opacity -= 0.05;
+                    
+                    if (opacity <= 0) {
+                        // 完全に透明になったらクリア
+                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                        return;
+                    }
+                    
+                    // アルファ値を調整
+                    for (let i = 0; i < originalData.length; i += 4) {
+                        data[i] = originalData[i];     // R
+                        data[i + 1] = originalData[i + 1]; // G
+                        data[i + 2] = originalData[i + 2]; // B
+                        data[i + 3] = originalData[i + 3] * opacity; // A
+                    }
+                    
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.putImageData(fadeData, 0, 0);
+                    
+                    requestAnimationFrame(fadeStep);
+                };
+                
+                requestAnimationFrame(fadeStep);
+            }
+            
+            clearAll() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            // スクリーン座標を通常時ビューポート基準の標準座標系に変換
+            screenToCanvasCoords(screenX, screenY) {
+                const app = window.presentationApp;
+                if (!app) {
+                    return { x: screenX, y: screenY };
+                }
+                
+                if (app.isZoomed) {
+                    // 拡大時はマウス位置を通常時の座標系に逆変換
+                    const container = document.getElementById('slideContent');
+                    if (container) {
+                        const containerRect = container.getBoundingClientRect();
+                        
+                        // ズーム中心からの相対位置を計算
+                        const deltaX = screenX - app.zoomCenter.x;
+                        const deltaY = screenY - app.zoomCenter.y;
+                        
+                        // ズーム倍率で逆算して通常時の座標に変換
+                        const normalizedX = app.zoomCenter.x + (deltaX / app.zoomFactor);
+                        const normalizedY = app.zoomCenter.y + (deltaY / app.zoomFactor);
+                        
+                        return { x: normalizedX, y: normalizedY };
+                    }
+                }
+                
+                // 通常時はそのまま（標準座標系）
+                return { x: screenX, y: screenY };
+            }
+            
+            // キャンバスのズーム状態を更新
+            updateCanvasZoom(isZoomed, zoomFactor, zoomCenter, panOffset) {
+                if (isZoomed) {
+                    // 拡大時はキャンバスも同じ拡大で表示
+                    const container = document.getElementById('slideContent');
+                    if (container) {
+                        const containerRect = container.getBoundingClientRect();
+                        const relativeX = (zoomCenter.x - containerRect.left) / containerRect.width;
+                        const relativeY = (zoomCenter.y - containerRect.top) / containerRect.height;
+                        
+                        this.canvas.style.transformOrigin = `${relativeX * 100}% ${relativeY * 100}%`;
+                        this.canvas.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomFactor})`;
+                    }
+                } else {
+                    // 通常時は標準サイズ
+                    this.canvas.style.transformOrigin = 'center center';
+                    this.canvas.style.transform = 'scale(1)';
+                }
+            }
+        }
+        
+        // マウストラッカークラス
+        class MouseTracker {
+            constructor() {
+                this.cursor = document.getElementById('customCursor');
+                this.trails = [];
+                this.maxTrails = 20;
+                this.lastMousePos = { x: 0, y: 0 };
+                this.trailDistance = 15; // 軌跡を作成する最小距離
+                
+                // カーソル要素が見つからない場合の処理
+                if (!this.cursor) {
+                    console.error('Custom cursor element not found');
+                    return;
+                }
+                
+                this.init();
+            }
+            
+            init() {
+                // パフォーマンス最適化のためのスロットリング
+                let lastTrailTime = 0;
+                const trailThrottle = 16; // 60fps相当
+                
+                // オーバーレイでマウス移動を追跡
+                const overlay = document.getElementById('mouseOverlay');
+                if (overlay) {
+                    overlay.addEventListener('mousemove', (e) => {
+                        this.updateCursor(e.clientX, e.clientY);
+                        
+                        // 軌跡描画をスロットリング
+                        const now = Date.now();
+                        if (now - lastTrailTime > trailThrottle) {
+                            this.createTrail(e.clientX, e.clientY);
+                            lastTrailTime = now;
+                        }
+                    });
+                    
+                    // クリックイベントを下の要素に転送
+                    overlay.addEventListener('click', (e) => {
+                        this.forwardEventToUnderlyingElement(e, 'click');
+                    });
+                    
+                    overlay.addEventListener('mousedown', (e) => {
+                        this.cursor.classList.add('clicked');
+                        this.forwardEventToUnderlyingElement(e, 'mousedown');
+                    });
+                    
+                    overlay.addEventListener('mouseup', (e) => {
+                        this.cursor.classList.remove('clicked');
+                        this.forwardEventToUnderlyingElement(e, 'mouseup');
+                    });
+                    
+                    // 右クリックでズームトグル
+                    overlay.addEventListener('contextmenu', (e) => {
+                        e.preventDefault(); // コンテキストメニューを無効化
+                        if (window.presentationApp) {
+                            window.presentationApp.toggleZoom(e.clientX, e.clientY);
+                        }
+                    });
+                    
+                    // ダブルクリックでズームリセット
+                    overlay.addEventListener('dblclick', (e) => {
+                        if (window.presentationApp && window.presentationApp.isZoomed) {
+                            window.presentationApp.toggleZoom(e.clientX, e.clientY);
+                        }
+                        this.forwardEventToUnderlyingElement(e, 'dblclick');
+                    });
+                }
+                
+                // ドキュメント全体でもマウス移動を追跡（フォールバック）
+                document.addEventListener('mousemove', (e) => {
+                    this.updateCursor(e.clientX, e.clientY);
+                    
+                    // 軌跡描画をスロットリング
+                    const now = Date.now();
+                    if (now - lastTrailTime > trailThrottle) {
+                        this.createTrail(e.clientX, e.clientY);
+                        lastTrailTime = now;
+                    }
+                });
+                
+                // マウスクリックエフェクト
+                document.addEventListener('mousedown', () => {
+                    this.cursor.classList.add('clicked');
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    this.cursor.classList.remove('clicked');
+                });
+                
+                // マウスがウィンドウから出た時の処理
+                document.addEventListener('mouseleave', () => {
+                    this.cursor.style.opacity = '0';
+                });
+                
+                document.addEventListener('mouseenter', () => {
+                    this.cursor.style.opacity = '1';
+                });
+            }
+            
+            updateCursor(x, y) {
+                if (this.cursor) {
+                    this.cursor.style.left = x + 'px';
+                    this.cursor.style.top = y + 'px';
+                    this.cursor.style.opacity = '1';
+                    this.cursor.style.display = 'block';
+                }
+            }
+            
+            createTrail(x, y) {
+                // 前回の位置からの距離を計算
+                const distance = Math.sqrt(
+                    Math.pow(x - this.lastMousePos.x, 2) + 
+                    Math.pow(y - this.lastMousePos.y, 2)
+                );
+                
+                // 一定距離以上移動した場合のみ軌跡を作成
+                if (distance > this.trailDistance) {
+                    const trail = document.createElement('div');
+                    trail.className = 'mouse-trail trail-fade';
+                    trail.style.left = x + 'px';
+                    trail.style.top = y + 'px';
+                    
+                    document.body.appendChild(trail);
+                    this.trails.push(trail);
+                    
+                    // 軌跡の数を制限
+                    if (this.trails.length > this.maxTrails) {
+                        const oldTrail = this.trails.shift();
+                        if (oldTrail && oldTrail.parentNode) {
+                            oldTrail.parentNode.removeChild(oldTrail);
+                        }
+                    }
+                    
+                    // アニメーション終了後に要素を削除
+                    setTimeout(() => {
+                        if (trail && trail.parentNode) {
+                            trail.parentNode.removeChild(trail);
+                            const index = this.trails.indexOf(trail);
+                            if (index > -1) {
+                                this.trails.splice(index, 1);
+                            }
+                        }
+                    }, 800);
+                    
+                    this.lastMousePos = { x, y };
+                }
+            }
+            
+            clearTrails() {
+                this.trails.forEach(trail => {
+                    if (trail && trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                });
+                this.trails = [];
+            }
+            
+            forwardEventToUnderlyingElement(originalEvent, eventType) {
+                // コントロール領域内のクリックは転送しない
+                const controls = document.getElementById('controls');
+                if (controls) {
+                    const controlsRect = controls.getBoundingClientRect();
+                    if (originalEvent.clientX >= controlsRect.left &&
+                        originalEvent.clientX <= controlsRect.right &&
+                        originalEvent.clientY >= controlsRect.top &&
+                        originalEvent.clientY <= controlsRect.bottom) {
+                        return; // コントロール領域内なので転送しない
+                    }
+                }
+                
+                // オーバーレイを一時的に無効化
+                const overlay = document.getElementById('mouseOverlay');
+                if (!overlay) return;
+                
+                overlay.style.pointerEvents = 'none';
+                
+                // 同じ座標の下にある要素を取得
+                const elementBelow = document.elementFromPoint(originalEvent.clientX, originalEvent.clientY);
+                
+                // オーバーレイを再度有効化
+                overlay.style.pointerEvents = 'auto';
+                
+                if (elementBelow && elementBelow !== overlay) {
+                    // 新しいイベントを作成して転送
+                    const newEvent = new MouseEvent(eventType, {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: originalEvent.clientX,
+                        clientY: originalEvent.clientY,
+                        button: originalEvent.button,
+                        buttons: originalEvent.buttons,
+                        ctrlKey: originalEvent.ctrlKey,
+                        shiftKey: originalEvent.shiftKey,
+                        altKey: originalEvent.altKey,
+                        metaKey: originalEvent.metaKey
+                    });
+                    
+                    elementBelow.dispatchEvent(newEvent);
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            window.presentationApp = new PresentationApp();
+        });
+    </script>
+</body>
+</html>

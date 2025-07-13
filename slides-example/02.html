@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スライド 2</title>
+    <style>
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            margin: 0 auto;
+            padding: 60px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .content {
+            font-size: 1.3em;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 20px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #00d63f;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <h1>主な機能</h1>
+        <div class="content">
+            <ul>
+                <li>HTMLスライドの自動検出と表示</li>
+                <li>右クリックでズーム機能（2倍拡大）</li>
+                <li>マウスドラッグで線の描画</li>
+                <li>ズーム時のホイールスクロール</li>
+                <li>カスタマイズ可能な設定ファイル</li>
+                <li>レスポンシブ対応</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

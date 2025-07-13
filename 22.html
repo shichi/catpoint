@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>業界境界の融解・再編</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background-color: #0a192f;
+            color: white;
+        }
+        .grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1642276782168-236741bbfc26?q=80&w=1280&auto=format&fit=crop');
+            background-size: cover;
+            opacity: 0.15;
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .content-box {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+        }
+        .highlight-text {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+        .key-point {
+            background-color: rgba(59, 130, 246, 0.15);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .key-point:hover {
+            background-color: rgba(59, 130, 246, 0.25);
+        }
+        .key-point-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: rgba(59, 130, 246, 0.3);
+            color: #90cdf4;
+        }
+        .overlay-shape {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(59, 130, 246, 0.1);
+            z-index: 0;
+        }
+        .arrow-flow {
+            position: relative;
+            height: 2px;
+            background-color: #3b82f6;
+            margin: 30px 0;
+        }
+        .arrow-flow:after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 10px solid #3b82f6;
+        }
+        .industry-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            font-weight: 500;
+            border: 2px solid rgba(59, 130, 246, 0.5);
+            transition: all 0.3s ease;
+        }
+        .industry-circle:hover {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container flex flex-col">
+        <!-- 背景パターン -->
+        <div class="grid-pattern"></div>
+        
+        <!-- 装飾用の円形オーバーレイ -->
+        <div class="overlay-shape" style="width: 300px; height: 300px; top: -100px; right: -100px;"></div>
+        <div class="overlay-shape" style="width: 400px; height: 400px; bottom: -200px; left: -200px;"></div>
+        
+        <!-- ヘッダー -->
+        <div class="px-16 pt-12 pb-6 z-10">
+            <h1 class="section-title text-white flex items-center">
+                <i class="fas fa-bezier-curve text-blue-400 mr-4"></i>
+                業界境界の融解・再編
+            </h1>
+            <div class="w-32 h-1 bg-blue-500 mt-4"></div>
+        </div>
+        
+        <!-- メインコンテンツ -->
+        <div class="px-16 py-4 flex-grow grid grid-cols-12 gap-8 z-10">
+            <!-- 左側：主要コンテンツ -->
+            <div class="col-span-7">
+                <div class="content-box p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-4">
+                        <i class="fas fa-network-wired mr-2"></i>業界の垣根崩壊とエコシステム再編
+                    </h2>
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="industry-circle bg-blue-900 bg-opacity-50">
+                            <i class="fas fa-industry text-2xl text-blue-300 mb-2"></i>
+                            <div>メーカー</div>
+                        </div>
+                        <div class="arrow-flow w-12"></div>
+                        <div class="industry-circle bg-blue-900 bg-opacity-50">
+                            <i class="fas fa-store text-2xl text-blue-300 mb-2"></i>
+                            <div>小売</div>
+                        </div>
+                        <div class="arrow-flow w-12"></div>
+                        <div class="industry-circle bg-blue-900 bg-opacity-50">
+                            <i class="fas fa-truck text-2xl text-blue-300 mb-2"></i>
+                            <div>3PL</div>
+                        </div>
+                    </div>
+                    <ul class="text-gray-200 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-blue-400 mt-1 mr-2"></i>
+                            <span>メーカーの<span class="highlight-text">DTC（Direct to Consumer）</span>戦略による小売・物流機能の内製化</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-blue-400 mt-1 mr-2"></i>
+                            <span>小売企業による<span class="highlight-text">自社物流ネットワーク構築</span>と3PL事業への参入</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-blue-400 mt-1 mr-2"></i>
+                            <span>3PLプロバイダーによる<span class="highlight-text">メーカー物流部門の買収</span>とバリューチェーン拡大</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="content-box p-6">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-random mr-2"></i>アンバンドリングとリバンドリング
+                    </h2>
+                    <div class="text-gray-300 mb-4">
+                        企業の機能分解（アンバンドリング）と新たな形での再結合（リバンドリング）が加速
+                    </div>
+                    <ul class="text-gray-200 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-cubes text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">アンバンドリング：</span>コア/ノンコア機能の峻別、物流機能のスピンオフ、専門特化</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-object-group text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">リバンドリング：</span>異業種機能の統合、プラットフォーム化、エコシステム構築</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-handshake text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">M&A加速：</span>規模拡大だけでなく、機能獲得・テクノロジー獲得型の買収が主流に</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 右側：キーポイント -->
+            <div class="col-span-5">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">
+                    <i class="fas fa-chess mr-2"></i>業界再編の主要パターン
+                </h2>
+                
+                <div class="key-point p-4 mb-4 flex items-start">
+                    <div class="key-point-icon flex-shrink-0 mr-4">
+                        <i class="fas fa-compress-arrows-alt"></i>
+                    </div>
+                    <div>
+                        <div class="text-lg font-medium text-white mb-1">垂直統合型</div>
+                        <div class="text-sm text-gray-300">Amazonモデル：仕入・販売・物流・決済・配送までを自社でワンストップ提供。コントロール重視</div>
+                    </div>
+                </div>
+                
+                <div class="key-point p-4 mb-4 flex items-start">
+                    <div class="key-point-icon flex-shrink-0 mr-4">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div>
+                        <div class="text-lg font-medium text-white mb-1">水平連携型</div>
+                        <div class="text-sm text-gray-300">楽天・ヤマト型：異業種間の戦略的提携で相互補完的な機能結合。柔軟性と拡張性重視</div>
+                    </div>
+                </div>
+                
+                <div class="key-point p-4 mb-4 flex items-start">
+                    <div class="key-point-icon flex-shrink-0 mr-4">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <div>
+                        <div class="text-lg font-medium text-white mb-1">機能特化型</div>
+                        <div class="text-sm text-gray-300">専門領域（コールドチェーン、医薬品物流など）に特化し、付加価値とテクノロジー競争力を高める</div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 rounded-lg bg-blue-900 bg-opacity-40 border border-blue-700">
+                    <div class="text-center text-lg font-medium text-blue-300 mb-2">
+                        <i class="fas fa-exclamation-circle mr-2"></i>意識すべき問い<i class="fas fa-exclamation-circle ml-2"></i>
+                    </div>
+                    <div class="text-gray-200 text-center">
+                        「今後10年、SBSの主要競合は<br>
+                        他の物流会社ではない可能性が高い」<br>
+                        <span class="text-sm italic mt-2 block">競争相手は誰になるのか？</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

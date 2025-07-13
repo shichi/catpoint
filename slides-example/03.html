@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スライド 3</title>
+    <style>
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            margin: 0 auto;
+            padding: 60px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .config-example {
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <h1>設定ファイル例 (config.json)</h1>
+        <div class="config-example">
+{<br>
+  <span class="highlight">"presentation"</span>: {<br>
+    "title": "My Presentation",<br>
+    "autoDetectSlides": true,<br>
+    "slideDirectory": "./slides"<br>
+  },<br>
+  <span class="highlight">"ui"</span>: {<br>
+    "theme": {<br>
+      "backgroundColor": "#0a192f",<br>
+      "primaryColor": "#3b82f6"<br>
+    }<br>
+  },<br>
+  <span class="highlight">"drawing"</span>: {<br>
+    "lineColor": "#ff0000",<br>
+    "fadeTimeout": 3000<br>
+  }<br>
+}
+        </div>
+    </div>
+</body>
+</html>

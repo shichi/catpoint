@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消費者とコマースの進化</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background-color: #0a192f;
+            color: white;
+        }
+        .grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1642276782168-236741bbfc26?q=80&w=1280&auto=format&fit=crop');
+            background-size: cover;
+            opacity: 0.15;
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .content-box {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+        }
+        .highlight-text {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+        .key-point {
+            background-color: rgba(59, 130, 246, 0.15);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .key-point:hover {
+            background-color: rgba(59, 130, 246, 0.25);
+        }
+        .feature-image {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+        .overlay-shape {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(59, 130, 246, 0.1);
+            z-index: 0;
+        }
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+        .value-creation-box {
+            background-color: rgba(30, 58, 138, 0.4);
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container flex flex-col">
+        <!-- 背景パターン -->
+        <div class="grid-pattern"></div>
+        
+        <!-- 装飾用の円形オーバーレイ -->
+        <div class="overlay-shape" style="width: 300px; height: 300px; top: -100px; right: -100px;"></div>
+        <div class="overlay-shape" style="width: 400px; height: 400px; bottom: -200px; left: -200px;"></div>
+        
+        <!-- ヘッダー -->
+        <div class="px-16 pt-12 pb-6 z-10">
+            <h1 class="section-title text-white flex items-center">
+                <i class="fas fa-shopping-cart text-blue-400 mr-4"></i>
+                消費者とコマースの進化
+            </h1>
+            <div class="w-32 h-1 bg-blue-500 mt-4"></div>
+        </div>
+        
+        <!-- メインコンテンツ -->
+        <div class="px-16 py-4 flex-grow grid grid-cols-12 gap-8 z-10">
+            <!-- 左側：主要コンテンツ -->
+            <div class="col-span-7">
+                <div class="content-box p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-chart-line mr-2"></i>EC化率の急拡大と消費行動の変容
+                    </h2>
+                    <ul class="text-gray-200 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>日本のEC市場規模は<span class="highlight-text">過去10年で約3倍に拡大</span>（18兆円規模）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>2040年のEC化率は<span class="highlight-text">現状の約10%から23.2%</span>にまで上昇する見込み</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>新型コロナ禍で加速した<span class="highlight-text">デジタルシフトは不可逆的</span>に</span>
+                        </li>
+                    </ul>
+                    <div class="mt-4 text-gray-300 italic">
+                        物理店舗とデジタル空間の融合により、消費者の購買体験は根本的に変容
+                    </div>
+                </div>
+                
+                <div class="content-box p-6">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-truck-loading mr-2"></i>物流体験＝ブランド体験の時代へ
+                    </h2>
+                    <ul class="text-gray-200 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>ECが主流の世界では<span class="highlight-text">物流が顧客との最後の接点</span>に</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>配送遅延や梱包不備は<span class="highlight-text">直接ブランドイメージを毀損</span>する時代へ</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-blue-400 mt-1 mr-2"></i>
+                            <span>物流は<span class="highlight-text">「コストセンター」から「ブランド価値創造の源泉」</span>へ</span>
+                        </li>
+                    </ul>
+                    <div class="mt-4 text-gray-300 italic">
+                        3PL事業者はバックエンドのサービス提供者から、顧客体験を左右する戦略的パートナーへ
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右側：キーポイントとチャート -->
+            <div class="col-span-5">
+                <div class="chart-container mb-6">
+                    <canvas id="ecRateChart"></canvas>
+                </div>
+                
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">物流の位置づけ変化</h2>
+                
+                <!-- 3項目を横並びに配置（写真に置き換え） -->
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <div class="key-point p-3 flex flex-col items-center text-center h-full">
+                        <div class="mb-3 w-full">
+                            <img src="https://www.mckinsey.com/~/media/mckinsey/industries/travel%20logistics%20and%20infrastructure/our%20insights/same%20day%20delivery%20the%20next%20evolutionary%20step%20in%20parcel%20logistics/png_illustration_1.png" 
+                                 alt="オンデマンド配送" 
+                                 class="feature-image">
+                        </div>
+                        <div class="text-lg font-medium text-white mb-1">オンデマンド化</div>
+                        <div class="text-xs text-gray-300">消費者は「欲しい時に、欲しい場所で」受け取ることを当然視</div>
+                    </div>
+                    
+                    <div class="key-point p-3 flex flex-col items-center text-center h-full">
+                        <div class="mb-3 w-full">
+                            <img src="https://wahydlogistics.com/blog/wp-content/uploads/2024/08/Personalized-Delivery-Services.jpg" 
+                                 alt="パーソナライズ配送" 
+                                 class="feature-image">
+                        </div>
+                        <div class="text-lg font-medium text-white mb-1">パーソナライズ化</div>
+                        <div class="text-xs text-gray-300">個々の消費者ニーズに合わせた配送体験の提供が差別化要因に</div>
+                    </div>
+                    
+                    <div class="key-point p-3 flex flex-col items-center text-center h-full">
+                        <div class="mb-3 w-full">
+                            <img src="https://www.shipbob.com/wp-content/uploads/2021/04/eco-friendly-packaging.png" 
+                                 alt="サステナブル配送" 
+                                 class="feature-image">
+                        </div>
+                        <div class="text-lg font-medium text-white mb-1">サステナビリティ</div>
+                        <div class="text-xs text-gray-300">環境負荷の低い配送が消費者選択の重要基準になる</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 新たな価値創造の機会 - 2カラム全幅で表示 -->
+            <div class="col-span-12 value-creation-box p-4 flex items-center">
+                <div class="flex-shrink-0 mr-4 ml-2 text-blue-300 text-3xl">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="mr-6">
+                    <div class="text-lg font-medium text-blue-300">新たな価値創造の機会</div>
+                </div>
+                <div class="flex-grow text-gray-200 text-lg flex items-center justify-center">
+                    <span>物流はコスト削減の対象から</span>
+                    <span class="text-blue-300 font-medium mx-3">顧客体験とブランド価値を創造する</span>
+                    <span>戦略的差別化要因へ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('ecRateChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['2000', '2010', '2020', '2030', '2040'],
+                    datasets: [{
+                        label: '日本のEC化率予測(%)',
+                        data: [0.8, 4.2, 10.0, 16.5, 23.2],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#60a5fa',
+                        pointRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                font: {
+                                    family: "'Noto Sans JP', sans-serif",
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '日本の小売市場EC化率の推移と予測',
+                            color: '#fff',
+                            font: {
+                                family: "'Noto Sans JP', sans-serif",
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

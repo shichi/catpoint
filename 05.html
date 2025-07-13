@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人口動態という不可逆の潮流</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background-color: #0a192f;
+            color: white;
+        }
+        .grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1642276782168-236741bbfc26?q=80&w=1280&auto=format&fit=crop');
+            background-size: cover;
+            opacity: 0.15;
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .content-box {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+        }
+        .highlight-text {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+        .key-point {
+            background-color: rgba(59, 130, 246, 0.15);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .key-point:hover {
+            background-color: rgba(59, 130, 246, 0.25);
+        }
+        .key-point-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: rgba(59, 130, 246, 0.3);
+            color: #90cdf4;
+        }
+        .overlay-shape {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(59, 130, 246, 0.1);
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container flex flex-col">
+        <!-- 背景パターン -->
+        <div class="grid-pattern"></div>
+        
+        <!-- 装飾用の円形オーバーレイ -->
+        <div class="overlay-shape" style="width: 300px; height: 300px; top: -100px; right: -100px;"></div>
+        <div class="overlay-shape" style="width: 400px; height: 400px; bottom: -200px; left: -200px;"></div>
+        
+        <!-- ヘッダー -->
+        <div class="px-16 pt-12 pb-6 z-10">
+            <h1 class="section-title text-white flex items-center">
+                <i class="fas fa-chart-line text-blue-400 mr-4"></i>
+                人口動態という不可逆の潮流
+            </h1>
+            <div class="w-32 h-1 bg-blue-500 mt-4"></div>
+        </div>
+        
+        <!-- メインコンテンツ -->
+        <div class="px-16 py-4 flex-grow grid grid-cols-12 gap-8 z-10">
+            <!-- 左側：主要コンテンツ -->
+            <div class="col-span-7">
+                <div class="content-box p-6 mb-4">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-users mr-2"></i>日本の人口構造変化
+                    </h2>
+                    <ul class="text-gray-200 space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-down text-red-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">総人口の減少</span>：2040年までに総人口は約1,100万人減少</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-down text-red-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">生産年齢人口の急減</span>：2040年までに約1,400万人の労働力人口の減少</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-up text-yellow-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">高齢化率の上昇</span>：2040年に35.3%（約3人に1人が65歳以上）</span>
+                        </li>
+                    </ul>
+                    <div class="mt-2 text-gray-300 italic text-sm">
+                        国立社会保障・人口問題研究所推計によると、これらの変化は「確実に起こる未来」です
+                    </div>
+                </div>
+                
+                <div class="content-box p-6 mb-4">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>2040年問題と物流への影響
+                    </h2>
+                    <ul class="text-gray-200 space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-truck text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">ドライバー不足率24.2%</span>：運輸・郵便業で4人に1人が不足する事態</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-warehouse text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">倉庫作業員の確保困難</span>：若年層の減少と高齢化による現場人員の不足</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-yen-sign text-yellow-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">人件費の構造的高騰</span>：希少資源となる人的資本のコスト急上昇</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-recycle text-green-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">現行オペレーションの持続不可能性</span>：労働集約型モデルの限界</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="content-box p-6">
+                    <h2 class="text-xl font-semibold text-blue-300 mb-3">
+                        <i class="fas fa-industry mr-2"></i>現場はこう変わる：物流プロフェッショナルの新たな現実
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-900 bg-opacity-30 p-3 rounded-lg">
+                            <h4 class="text-yellow-300 font-medium mb-1">採用・人材確保の危機</h4>
+                            <ul class="text-sm text-gray-200 space-y-1">
+                                <li>• 求人応募数の激減（現在の1/3程度に）</li>
+                                <li>• 採用コスト高騰（人材紹介料の倍増）</li>
+                                <li>• 新卒採用での他業種との競争激化</li>
+                                <li>• 外国人労働者への依存度増大</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-900 bg-opacity-30 p-3 rounded-lg">
+                            <h4 class="text-yellow-300 font-medium mb-1">コスト構造の劇的変化</h4>
+                            <ul class="text-sm text-gray-200 space-y-1">
+                                <li>• 人件費が全コストの60-70%を占める</li>
+                                <li>• 同一労働同一賃金の徹底による待遇改善</li>
+                                <li>• 賃金水準の大幅上昇（年率3-5%）</li>
+                                <li>• 価格転嫁の限界と利益率の圧迫</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-900 bg-opacity-30 p-3 rounded-lg">
+                            <h4 class="text-yellow-300 font-medium mb-1">サービスレベルの維持困難</h4>
+                            <ul class="text-sm text-gray-200 space-y-1">
+                                <li>• 繁忙期対応力の大幅低下</li>
+                                <li>• 配送密度低下によるコスト増</li>
+                                <li>• 深夜・早朝配送の限定化</li>
+                                <li>• 配送拒否エリアの出現</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-900 bg-opacity-30 p-3 rounded-lg">
+                            <h4 class="text-yellow-300 font-medium mb-1">労働力の質的変化</h4>
+                            <ul class="text-sm text-gray-200 space-y-1">
+                                <li>• 現場作業者の平均年齢上昇（50代中心）</li>
+                                <li>• 若年層の「3K職場」忌避傾向強化</li>
+                                <li>• テクノロジー活用への世代間ギャップ</li>
+                                <li>• 新しい働き方を求める価値観の変化</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-2 bg-red-900 bg-opacity-30 rounded-lg text-center">
+                        <span class="text-white font-medium">物流事業者は「人手ありき」からの脱却を迫られています</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右側：キーポイント -->
+            <div class="col-span-5">
+                <div class="key-point p-4 mb-4">
+                    <h3 class="text-lg font-medium text-white mb-3">物流業界への直接的影響</h3>
+                    <div class="bg-blue-900 bg-opacity-50 rounded-lg p-4">
+                        <canvas id="laborChart" width="320" height="200"></canvas>
+                    </div>
+                    <div class="text-sm text-center text-gray-300 mt-2">
+                        物流業界の労働力不足推移（2020-2040）
+                    </div>
+                </div>
+                
+                <div class="key-point p-4 mb-4">
+                    <h3 class="text-lg font-medium text-white mb-3">
+                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
+                        人的資源の根本的変化
+                    </h3>
+                    <div class="p-3 bg-blue-900 bg-opacity-40 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-gray-300">現在</div>
+                            <div class="text-gray-300">2040年</div>
+                        </div>
+                        <div class="flex items-center mb-3">
+                            <div class="w-1/2 pr-2 text-sm">
+                                <div class="p-2 bg-blue-800 bg-opacity-50 rounded-l-lg text-center">
+                                    安価で代替可能な<br>リソース
+                                </div>
+                            </div>
+                            <div class="w-1/2 pl-2 text-sm">
+                                <div class="p-2 bg-red-800 bg-opacity-50 rounded-r-lg text-center">
+                                    希少で高価な<br>プレミアムリソース
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center text-sm text-gray-300">
+                            ↓
+                        </div>
+                        <div class="p-2 bg-blue-700 rounded-lg text-center mt-2">
+                            <span class="text-white font-medium">テクノロジー投資は「選択」から「必須」へ</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="key-point p-4">
+                    <h3 class="text-lg font-medium text-white mb-3">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                        対応シナリオの方向性
+                    </h3>
+                    <ul class="text-gray-200 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-robot text-blue-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">自動化・無人化</span>の加速</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-brain text-purple-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">AI活用</span>による効率化・最適化</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-network-wired text-green-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">シェアリング</span>による業界横断的資源活用</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-users-cog text-yellow-400 mt-1 mr-2"></i>
+                            <span><span class="highlight-text">労働環境</span>の抜本的改革</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 労働力不足チャートの作成
+        const ctx = document.getElementById('laborChart').getContext('2d');
+        const laborChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2020', '2025', '2030', '2035', '2040'],
+                datasets: [{
+                    label: 'ドライバー不足率(%)',
+                    data: [6.8, 11.3, 16.5, 21.0, 24.2],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#e5e7eb'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
