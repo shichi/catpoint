@@ -49,3 +49,18 @@ coverage/
 .electron/*.html
 !presentation.html
 !slides-example/*.html
+
+# Generated files
+*.pdf
+pdf/
+
+# Slide files (numbered HTML files)
+[0-9][0-9].html
+[0-9][0-9].hmtl
+
+# Temporary files
+REFACTORING_NOTES.md
+slide-template.html
+presentation-config.js
+shared-styles.css
+slide-utils.js

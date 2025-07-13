@@ -49,13 +49,8 @@
   },
   "pdf": {
     "enabled": true,
-    "quality": 1.0,
-    "format": "auto",
-    "orientation": "auto",
-    "margin": 10,
     "filename": "presentation",
-    "includeDrawings": false,
-    "compression": true
+    "includeDrawings": false
   },
   "transitions": {
     "type": "dissolve",
