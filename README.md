@@ -1,141 +1,143 @@
-# 汎用プレゼンテーションビューア
+# Universal Presentation Viewer
 
-**設定可能でインタラクティブなHTMLスライドプレゼンテーションアプリケーション**
+**Configurable and Interactive HTML Slide Presentation Application**
 
-あらゆる種類のHTMLスライドに対応し、豊富な操作機能を提供する汎用性の高いプレゼンテーションツールです。
-教育、ビジネス、個人利用など幅広い用途に対応します。
+A highly versatile presentation tool that supports all types of HTML slides and provides rich interactive features.
+Suitable for educational, business, and personal use across a wide range of applications.
 
-## 特徴
+[🇯🇵 日本語版 README](README_ja.md)
 
-### 基本機能
-- 📁 **HTMLスライドの自動検出** - フォルダ内のHTMLファイルを自動認識
-- ✨ **スムーズなスライド遷移** - ディゾルブエフェクト付き
-- 📱 **レスポンシブデザイン** - 画面サイズに自動対応
-- ⌨️ **豊富なキーボードショートカット**
-- 🖥️ **フルスクリーン表示対応**
-- 📋 **スタンドアローンアプリ** - Electronベース
+## Features
 
-### インタラクティブ機能
-- 🔍 **右クリックズーム** - マウス位置中心の2倍拡大
-- 🎨 **リアルタイム描画** - マウスドラッグで線を描画、自動フェード
-- 🖱️ **ズーム時スクロール** - ホイールで表示範囲を移動
-- 👀 **カスタムマウスカーソル** - 軌跡付きの視認性向上
+### Core Functionality
+- 📁 **Automatic HTML Slide Detection** - Auto-recognition of HTML files in folders
+- ✨ **Smooth Slide Transitions** - With dissolve effects
+- 📱 **Responsive Design** - Automatic adaptation to screen sizes
+- ⌨️ **Rich Keyboard Shortcuts**
+- 🖥️ **Fullscreen Support**
+- 📋 **Standalone Desktop App** - Electron-based
 
-### カスタマイズ性
-- ⚙️ **設定ファイル対応** - JSON設定でフル customization
-- 🎨 **テーマ設定** - 色、サイズ、動作をカスタマイズ
-- 📂 **柔軟なファイル構成** - 任意のスライド配置に対応
+### Interactive Features
+- 🔍 **Right-Click Zoom** - 2x magnification centered on mouse position
+- 🎨 **Real-time Drawing** - Draw lines with mouse drag, auto-fade
+- 🖱️ **Zoom Scrolling** - Navigate view area with mouse wheel
+- 👀 **Custom Mouse Cursor** - Enhanced visibility with trail effects
 
-## クイックスタート
+### Customization
+- ⚙️ **Configuration File Support** - Full customization via JSON settings
+- 🎨 **Theme Settings** - Customize colors, sizes, and behaviors
+- 📂 **Flexible File Structure** - Support for arbitrary slide arrangements
 
-### 必要な環境
-- Node.js (v16以上推奨)
-- npm または yarn
+## Quick Start
 
-### インストールと実行
+### Prerequisites
+- Node.js (v16 or higher recommended)
+- npm or yarn
 
-1. **プロジェクトの準備**
+### Installation and Setup
+
+1. **Project Setup**
 ```bash
-# 依存関係のインストール
+# Install dependencies
 npm install
 
-# 設定ファイルの確認（必要に応じて編集）
-# config.json を編集してカスタマイズ
+# Check configuration file (edit if needed)
+# Edit config.json for customization
 ```
 
-2. **スライドの準備**
+2. **Prepare Slides**
 ```bash
-# スライドフォルダを作成（例）
+# Create slides folder (example)
 mkdir slides
 
-# HTMLスライドファイルを配置
+# Place HTML slide files
 # 01.html, 02.html, 03.html...
-# または slides-example フォルダを参考にしてください
+# Or refer to slides-example folder
 ```
 
-3. **アプリケーションの起動**
+3. **Launch Application**
 ```bash
-# 開発環境で実行
+# Run in development mode
 npm run dev
 
-# 本番環境で実行
+# Run in production mode
 npm start
 ```
 
-## ビルド
+## Build
 
-### すべてのプラットフォーム用にビルド
+### Build for All Platforms
 ```bash
 npm run build
 ```
 
-### プラットフォーム別ビルド
+### Platform-Specific Builds
 ```bash
-# macOS用
+# macOS
 npm run build:mac
 
-# Windows用
+# Windows
 npm run build:win
 
-# Linux用
+# Linux
 npm run build:linux
 ```
 
-ビルドされたファイルは `dist/` フォルダに生成されます。
+Built files will be generated in the `dist/` folder.
 
-## 操作方法
+## Controls
 
-### キーボードショートカット
+### Keyboard Shortcuts
 
-**スライド操作**
-- `→` / `Space`: 次のスライド
-- `←`: 前のスライド
-- `Home`: 最初のスライド
-- `End`: 最後のスライド
+**Slide Navigation**
+- `→` / `Space`: Next slide
+- `←`: Previous slide
+- `Home`: First slide
+- `End`: Last slide
 
-**表示操作**
-- `F11` / `Ctrl+Cmd+F` (Mac): フルスクリーン切り替え
-- `Escape`: フルスクリーン終了
-- `+` / `=`: ズームイン
-- `-` / `_`: ズームアウト
-- `0`: ズームリセット
+**Display Controls**
+- `F11` / `Ctrl+Cmd+F` (Mac): Toggle fullscreen
+- `Escape`: Exit fullscreen
+- `+` / `=`: Zoom in
+- `-` / `_`: Zoom out
+- `0`: Reset zoom
 
-**アプリ操作**
-- `Ctrl+R` / `Cmd+R`: 再読み込み
-- `Ctrl+Q` / `Cmd+Q`: アプリ終了
+**Application Controls**
+- `Ctrl+R` / `Cmd+R`: Reload
+- `Ctrl+Q` / `Cmd+Q`: Quit application
 
-### マウス操作
+### Mouse Controls
 
-**基本操作**
-- 画面下部のコントロールボタンでナビゲーション
-- フルスクリーンボタンで全画面表示
+**Basic Operations**
+- Navigation with control buttons at bottom of screen
+- Fullscreen button for full screen display
 
-**インタラクティブ機能**
-- **右クリック**: 2倍ズーム/ズーム解除（マウス位置中心）
-- **左クリック+ドラッグ**: 線の描画（3秒後に自動フェード）
-- **ホイール（ズーム時）**: 表示範囲の上下スクロール
-- **カスタムカーソル**: 赤色カーソルと軌跡表示
+**Interactive Features**
+- **Right Click**: 2x zoom/zoom toggle (centered on mouse position)
+- **Left Click + Drag**: Draw lines (auto-fade after 3 seconds)
+- **Wheel (During Zoom)**: Vertical scrolling of view area
+- **Custom Cursor**: Red cursor with trail visualization
 
-## ファイル構成
+## File Structure
 
 ```
-プロジェクトフォルダ/
-├── main.js              # Electronメインプロセス
-├── preload.js           # プリロードスクリプト
-├── presentation.html    # メインアプリケーション
-├── config.json          # 設定ファイル（カスタマイズ可能）
-├── package.json         # プロジェクト設定
-├── slides/              # スライドフォルダ（設定可能）
+Project Folder/
+├── main.js              # Electron main process
+├── preload.js           # Preload script
+├── presentation.html    # Main application
+├── config.json          # Configuration file (customizable)
+├── package.json         # Project settings
+├── slides/              # Slides folder (configurable)
 │   ├── 01.html
 │   ├── 02.html
 │   └── ...
-├── slides-example/      # サンプルスライド
-└── dist/               # ビルド出力フォルダ
+├── slides-example/      # Sample slides
+└── dist/               # Build output folder
 ```
 
-## カスタマイズ
+## Customization
 
-### 設定ファイル (config.json)
+### Configuration File (config.json)
 
 ```json
 {
@@ -171,133 +173,133 @@ npm run build:linux
 }
 ```
 
-### スライドの作成
+### Creating Slides
 
-**HTMLスライドテンプレート**
+**HTML Slide Template**
 ```html
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>スライドタイトル</title>
+    <title>Slide Title</title>
     <style>
         .slide-container {
             width: 1280px;
             height: 720px;
-            /* あなたのスタイル */
+            /* Your styles here */
         }
     </style>
 </head>
 <body>
     <div class="slide-container">
-        <!-- スライドコンテンツ -->
+        <!-- Slide content -->
     </div>
 </body>
 </html>
 ```
 
-**自動スライド検出**
-- `autoDetectSlides: true` で01.html〜99.htmlを自動検出
-- `slideDirectory` でスライドフォルダを指定可能
-- ファイル名は連番（01.html, 02.html...）が推奨
+**Automatic Slide Detection**
+- Set `autoDetectSlides: true` to auto-detect 01.html~99.html
+- Specify slide folder with `slideDirectory`
+- Sequential file naming (01.html, 02.html...) is recommended
 
-## 技術仕様
+## Technical Specifications
 
-### コア技術
-- **フレームワーク**: Electron (クロスプラットフォーム)
-- **フロントエンド**: HTML5, CSS3, Vanilla JavaScript
-- **レンダリング**: CSS Transform + Canvas API
-- **設定管理**: JSON設定ファイル
+### Core Technologies
+- **Framework**: Electron (Cross-platform)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Rendering**: CSS Transform + Canvas API
+- **Configuration**: JSON configuration files
 
-### 対応環境
+### Supported Environments
 - **OS**: Windows, macOS, Linux
-- **Node.js**: v16以上
-- **ブラウザ**: Chromium (Electron内蔵)
-- **スライド形式**: HTML, HTM
+- **Node.js**: v16 or higher
+- **Browser**: Chromium (Electron embedded)
+- **Slide Formats**: HTML, HTM
 
-### パフォーマンス最適化
-- ResizeObserver による効率的なリサイズ対応
-- スロットリングされたマウストラッキング
-- 非同期スライド読み込み
-- メモリ効率的な描画管理
+### Performance Optimizations
+- Efficient resize handling with ResizeObserver
+- Throttled mouse tracking
+- Asynchronous slide loading
+- Memory-efficient drawing management
 
-## トラブルシューティング
+## Troubleshooting
 
-### スライドが表示されない
+### Slides Not Displaying
 
-**原因と対処法**
-1. **ファイルが見つからない**
+**Causes and Solutions**
+1. **Files Not Found**
    ```bash
-   # スライドファイルの存在確認
-   ls slides/  # または ls *.html
+   # Check slide file existence
+   ls slides/  # or ls *.html
    ```
 
-2. **設定ファイルの問題**
+2. **Configuration File Issues**
    ```bash
-   # config.jsonの構文チェック
+   # Check config.json syntax
    node -e "console.log(JSON.parse(require('fs').readFileSync('config.json')))"
    ```
 
-3. **権限エラー**
+3. **Permission Errors**
    ```bash
-   # ファイル権限の確認
+   # Check file permissions
    chmod 644 *.html slides/*.html
    ```
 
-### 描画機能が動作しない
+### Drawing Feature Not Working
 
-**確認事項**
-- `config.json` で `"drawing.enabled": true` になっているか
-- ブラウザの開発者ツール（F12）でエラーを確認
-- Canvas APIがサポートされているか
+**Check Items**
+- Ensure `"drawing.enabled": true` in config.json
+- Check browser developer tools (F12) for errors
+- Verify Canvas API support
 
-### パフォーマンス問題
+### Performance Issues
 
-**最適化方法**
-- 大きな画像ファイルを最適化（WebP形式推奨）
-- `config.json` で不要な機能を無効化
-- スライド数を調整（推奨: 50スライド以下）
+**Optimization Methods**
+- Optimize large image files (WebP format recommended)
+- Disable unnecessary features in config.json
+- Adjust slide count (recommended: under 50 slides)
 
-### インストール問題
+### Installation Issues
 
 ```bash
-# 依存関係の完全再インストール
+# Complete dependency reinstallation
 rm -rf node_modules package-lock.json
 npm install
 
-# Electronの再ビルド
+# Rebuild Electron
 npm run rebuild
 ```
 
-## 貢献
+## Contributing
 
-### 機能要望・バグレポート
-Issueを作成してお知らせください。
+### Feature Requests & Bug Reports
+Please create an issue to let us know.
 
-### 開発への参加
-1. フォークを作成
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+### Development Participation
+1. Create a fork
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Create pull request
 
-## 使用例
+## Use Cases
 
-### 教育機関での利用
-- 授業用プレゼンテーション
-- 学会発表
-- オンライン講義
+### Educational Institutions
+- Classroom presentations
+- Academic conference presentations
+- Online lectures
 
-### ビジネス用途
-- 企業プレゼンテーション
-- 製品デモ
-- トレーニング資料
+### Business Applications
+- Corporate presentations
+- Product demonstrations
+- Training materials
 
-### 個人利用
-- ポートフォリオ展示
-- 写真スライドショー
-- 個人プロジェクトの発表
+### Personal Use
+- Portfolio showcases
+- Photo slideshows
+- Personal project presentations
 
-## ライセンス
+## License
 
-MIT License - 詳細は LICENSE ファイルを参照してください。
+MIT License - See LICENSE file for details.
