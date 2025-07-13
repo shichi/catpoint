@@ -46,4 +46,6 @@ coverage/
 .env.production.local
 
 # Electron
-.electron/
+.electron/*.html
+!presentation.html
+!slides-example/*.html
