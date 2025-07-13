@@ -47,6 +47,16 @@
     "fadeTimeout": 3000,
     "maxLines": 50
   },
+  "pdf": {
+    "enabled": true,
+    "quality": 1.0,
+    "format": "auto",
+    "orientation": "auto",
+    "margin": 10,
+    "filename": "presentation",
+    "includeDrawings": false,
+    "compression": true
+  },
   "transitions": {
     "type": "dissolve",
     "duration": 500,

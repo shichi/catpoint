@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SBS Holdings プレゼンテーション</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -230,6 +232,63 @@
         #zoomIndicator.show {
             opacity: 1;
         }
+        
+        /* PDF出力進行状況 */
+        .pdf-progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .pdf-progress-overlay.show {
+            display: flex;
+        }
+        
+        .pdf-progress-content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pdf-progress-content h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -252,6 +311,7 @@
         <div id="pageIndicator">1 / 32</div>
         <button class="control-btn" id="nextBtn">次へ ▶</button>
         <button class="control-btn" id="fullscreenBtn">全画面</button>
+        <button class="control-btn" id="pdfExportBtn">PDF出力</button>
     </div>
     
     <!-- カスタムマウスカーソル -->
@@ -259,6 +319,17 @@
     
     <!-- ズームインジケーター -->
     <div id="zoomIndicator">100%</div>
+    
+    <!-- PDF出力進行状況 -->
+    <div id="pdfProgress" class="pdf-progress-overlay">
+        <div class="pdf-progress-content">
+            <h3>PDFエクスポート中...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0 / 0</div>
+        </div>
+    </div>
     
     <!-- 描画キャンバス -->
     <canvas id="drawingCanvas"></canvas>
@@ -322,7 +393,11 @@
                 // 描画関連
                 this.drawingManager = null;
                 this.isDrawingMode = false;
-                this.lastZoomState = false; // 前回のズーム状態を記録
+                this.lastZoomState = false;
+                
+                // PDF出力関連
+                this.pdfExporter = null;
+                this.isExportingPDF = false; // 前回のズーム状態を記録
                 
                 this.init();
             }
@@ -403,37 +478,48 @@
             }
             
             applyConfig() {
+                if (!this.config) return;
+                
                 // タイトル設定
-                document.title = this.config.presentation.title;
+                if (this.config.presentation?.title) {
+                    document.title = this.config.presentation.title;
+                }
                 
                 // テーマ設定
-                const body = document.body;
-                body.style.background = this.config.ui.theme.backgroundColor;
+                if (this.config.ui?.theme?.backgroundColor) {
+                    const body = document.body;
+                    body.style.background = this.config.ui.theme.backgroundColor;
+                }
                 
                 // ズーム設定
-                this.zoomFactor = this.config.zoom.factor;
-                this.maxZoom = this.config.zoom.maxZoom;
-                this.minZoom = this.config.zoom.minZoom;
-                this.zoomStep = this.config.zoom.step;
-                this.scrollSensitivity = this.config.zoom.scrollSensitivity;
+                if (this.config.zoom) {
+                    this.zoomFactor = this.config.zoom.factor || 2;
+                    this.maxZoom = this.config.zoom.maxZoom || 3;
+                    this.minZoom = this.config.zoom.minZoom || 0.5;
+                    this.zoomStep = this.config.zoom.step || 0.2;
+                    this.scrollSensitivity = this.config.zoom.scrollSensitivity || 30;
+                }
                 
                 // スライドサイズ設定
-                this.slideActualSize = { ...this.config.presentation.defaultSlideSize };
+                if (this.config.presentation?.defaultSlideSize) {
+                    this.slideActualSize = { ...this.config.presentation.defaultSlideSize };
+                }
             }
             
             detectSlides() {
-                if (this.config.presentation.autoDetectSlides) {
+                if (this.config?.presentation?.autoDetectSlides) {
                     // 自動検出の場合、01.html-99.htmlの範囲で存在するファイルを検出
                     this.autoDetectSlideFiles();
                 } else {
-                    // 固定数の場合
-                    this.generateFileList();
+                    // 固定数の場合または設定がない場合
+                    this.useExampleSlides();
                 }
             }
             
             async autoDetectSlideFiles() {
                 const files = [];
                 let foundFiles = 0;
+                let consecutiveNotFound = 0;
                 
                 // 01.html から 99.html まで順次チェック
                 for (let i = 1; i <= 99; i++) {
@@ -445,12 +531,17 @@
                         if (response.ok) {
                             files.push(filename);
                             foundFiles++;
-                        } else if (foundFiles > 0 && i > foundFiles + 5) {
-                            // ファイルが見つからず、最後に見つかったファイルから5個以上空いた場合は終了
-                            break;
+                            consecutiveNotFound = 0;
+                        } else {
+                            consecutiveNotFound++;
+                            // 5個連続で見つからないか、最初から3個見つからない場合は終了
+                            if (consecutiveNotFound >= 5 || (foundFiles === 0 && i >= 3)) {
+                                break;
+                            }
                         }
                     } catch (error) {
-                        if (foundFiles > 0 && i > foundFiles + 5) {
+                        consecutiveNotFound++;
+                        if (consecutiveNotFound >= 5 || (foundFiles === 0 && i >= 3)) {
                             break;
                         }
                     }
@@ -459,21 +550,34 @@
                 this.htmlFiles = files;
                 this.totalSlides = files.length;
                 
+                console.log(`自動検出結果: ${this.totalSlides}個のスライドを発見`, files);
+                
                 if (this.totalSlides === 0) {
-                    console.warn('スライドファイルが見つかりません。デフォルト設定を使用します。');
-                    this.generateFileList();
+                    console.warn('スライドファイルが見つかりません。slides-exampleを使用します。');
+                    this.useExampleSlides();
                 }
             }
             
             generateFileList() {
                 const files = [];
-                const totalSlides = this.config.presentation.totalSlides || 32;
+                const totalSlides = this.config?.presentation?.totalSlides || 3; // デフォルトはサンプル数
                 for (let i = 1; i <= totalSlides; i++) {
                     const num = i.toString().padStart(2, '0');
-                    files.push(`${num}.html`);
+                    files.push(`slides-example/${num}.html`); // サンプルフォルダを使用
                 }
                 this.htmlFiles = files;
                 this.totalSlides = totalSlides;
+            }
+            
+            useExampleSlides() {
+                // slides-exampleフォルダのサンプルスライドを使用
+                this.htmlFiles = [
+                    'slides-example/01.html',
+                    'slides-example/02.html',
+                    'slides-example/03.html'
+                ];
+                this.totalSlides = 3;
+                console.log('サンプルスライドを使用します');
             }
             
             async init() {
@@ -484,6 +588,7 @@
                 this.setupResizeObserver();
                 this.setupMouseTracker();
                 this.setupDrawingManager();
+                this.setupPDFExporter();
                 await this.loadSlide(this.currentSlide);
                 this.hideLoadingScreen();
                 this.updateControls();
@@ -522,13 +627,22 @@
                 this.drawingManager = new DrawingManager();
             }
             
+            setupPDFExporter() {
+                this.pdfExporter = new PDFExporter(this);
+            }
+            
             async loadSlide(slideNumber) {
                 const iframe = document.getElementById('currentSlide');
                 const fileName = this.htmlFiles[slideNumber - 1];
                 
+                if (!fileName) {
+                    console.error(`スライド ${slideNumber} のファイルが見つかりません`);
+                    return;
+                }
+                
                 this.isSlideLoaded = false;
                 
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
                     iframe.onload = () => {
                         // スライドが完全にレンダリングされるまで待機
                         setTimeout(() => {
@@ -538,6 +652,13 @@
                             resolve();
                         }, 300);
                     };
+                    
+                    iframe.onerror = () => {
+                        console.error(`ファイルの読み込みに失敗: ${fileName}`);
+                        reject(new Error(`Failed to load slide: ${fileName}`));
+                    };
+                    
+                    console.log(`Loading slide: ${fileName}`);
                     iframe.src = fileName;
                 });
             }
@@ -763,6 +884,14 @@
                     this.toggleFullscreen();
                 });
                 
+                document.getElementById('pdfExportBtn').addEventListener('click', () => {
+                    if (this.config?.pdf?.enabled) {
+                        this.exportToPDF();
+                    } else {
+                        alert('PDF出力機能が無効になっています');
+                    }
+                });
+                
                 document.addEventListener('keydown', (e) => {
                     switch(e.key) {
                         case 'ArrowRight':
@@ -857,6 +986,28 @@
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
                 }, 500);
+            }
+            
+            async exportToPDF() {
+                if (this.isExportingPDF || !this.pdfExporter) return;
+                
+                try {
+                    this.isExportingPDF = true;
+                    await this.pdfExporter.exportAllSlides();
+                } catch (error) {
+                    console.error('PDF export failed:', error);
+                    alert('PDFエクスポートに失敗しました: ' + error.message);
+                } finally {
+                    this.isExportingPDF = false;
+                }
+            }
+            
+            async measureSlideActualSize(slideNumber) {
+                const currentSlideBackup = this.currentSlide;
+                await this.loadSlide(slideNumber);
+                const size = { ...this.slideActualSize };
+                await this.loadSlide(currentSlideBackup);
+                return size;
             }
             
         }
@@ -1279,6 +1430,232 @@
                     });
                     
                     elementBelow.dispatchEvent(newEvent);
+                }
+            }
+        }
+
+        // PDFエクスポータークラス
+        class PDFExporter {
+            constructor(presentationApp) {
+                this.app = presentationApp;
+                this.config = presentationApp.config?.pdf || {
+                    enabled: true,
+                    quality: 1.0,
+                    format: 'auto',
+                    orientation: 'auto',
+                    margin: 10,
+                    filename: 'presentation',
+                    includeDrawings: false,
+                    compression: true
+                };
+            }
+            
+            async exportAllSlides() {
+                if (!this.config.enabled) {
+                    throw new Error('PDF export is disabled in configuration');
+                }
+                
+                this.showProgress();
+                
+                try {
+                    // jsPDFを初期化
+                    const { jsPDF } = window.jspdf;
+                    let pdf = null;
+                    
+                    const totalSlides = this.app.totalSlides;
+                    
+                    for (let i = 1; i <= totalSlides; i++) {
+                        this.updateProgress(i, totalSlides, `スライド ${i} を処理中...`);
+                        
+                        // スライドをロードしてサイズを取得
+                        await this.app.loadSlide(i);
+                        await this.waitForSlideLoad();
+                        
+                        const slideSize = await this.getSlideActualSize();
+                        const canvas = await this.captureSlideAsCanvas();
+                        
+                        if (!pdf) {
+                            // 最初のスライドでPDFを初期化
+                            const orientation = this.calculateOrientation(slideSize);
+                            const format = this.calculateFormat(slideSize);
+                            pdf = new jsPDF({
+                                orientation: orientation,
+                                unit: 'mm',
+                                format: format,
+                                compress: this.config.compression
+                            });
+                        } else {
+                            // 2ページ目以降は新しいページを追加
+                            const orientation = this.calculateOrientation(slideSize);
+                            const format = this.calculateFormat(slideSize);
+                            pdf.addPage(format, orientation);
+                        }
+                        
+                        // キャンバスをPDFに追加
+                        await this.addCanvasToPDF(pdf, canvas, slideSize);
+                    }
+                    
+                    // PDFをダウンロード
+                    const filename = `${this.config.filename}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                    pdf.save(filename);
+                    
+                    this.updateProgress(totalSlides, totalSlides, '完了!');
+                    setTimeout(() => this.hideProgress(), 1500);
+                    
+                } catch (error) {
+                    this.hideProgress();
+                    throw error;
+                }
+            }
+            
+            async waitForSlideLoad() {
+                return new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            async getSlideActualSize() {
+                const iframe = document.getElementById('currentSlide');
+                if (!iframe) return { width: 1280, height: 720 };
+                
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const slideContainer = iframeDoc.querySelector('.slide-container');
+                    
+                    if (slideContainer) {
+                        const rect = slideContainer.getBoundingClientRect();
+                        return {
+                            width: rect.width || 1280,
+                            height: rect.height || 720
+                        };
+                    }
+                } catch (error) {
+                    console.warn('Cannot access slide content:', error);
+                }
+                
+                return { width: 1280, height: 720 };
+            }
+            
+            async captureSlideAsCanvas() {
+                const iframe = document.getElementById('currentSlide');
+                if (!iframe) throw new Error('Slide iframe not found');
+                
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const slideContainer = iframeDoc.querySelector('.slide-container') || iframeDoc.body;
+                    
+                    const canvas = await html2canvas(slideContainer, {
+                        scale: this.config.quality,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        width: slideContainer.scrollWidth,
+                        height: slideContainer.scrollHeight
+                    });
+                    
+                    return canvas;
+                } catch (error) {
+                    console.error('Canvas capture failed:', error);
+                    throw new Error('Failed to capture slide content');
+                }
+            }
+            
+            calculateOrientation(slideSize) {
+                if (this.config.orientation !== 'auto') {
+                    return this.config.orientation;
+                }
+                
+                return slideSize.width > slideSize.height ? 'landscape' : 'portrait';
+            }
+            
+            calculateFormat(slideSize) {
+                if (this.config.format !== 'auto') {
+                    return this.config.format;
+                }
+                
+                const aspectRatio = slideSize.width / slideSize.height;
+                
+                // 一般的なアスペクト比に基づいてフォーマットを選択
+                if (Math.abs(aspectRatio - (16/9)) < 0.1) {
+                    return [297, 167]; // 16:9 approximate
+                } else if (Math.abs(aspectRatio - (4/3)) < 0.1) {
+                    return [210, 158]; // 4:3 approximate
+                } else if (Math.abs(aspectRatio - 1) < 0.1) {
+                    return [210, 210]; // Square
+                }
+                
+                // カストムサイズを計算
+                const maxWidth = 420; // A3 width
+                const maxHeight = 297; // A3 height
+                
+                let width, height;
+                if (aspectRatio > 1) {
+                    width = Math.min(maxWidth, slideSize.width * 0.2);
+                    height = width / aspectRatio;
+                } else {
+                    height = Math.min(maxHeight, slideSize.height * 0.2);
+                    width = height * aspectRatio;
+                }
+                
+                return [width, height];
+            }
+            
+            async addCanvasToPDF(pdf, canvas, slideSize) {
+                const pageSize = pdf.internal.pageSize;
+                const pageWidth = pageSize.getWidth();
+                const pageHeight = pageSize.getHeight();
+                
+                const margin = this.config.margin;
+                const availableWidth = pageWidth - (margin * 2);
+                const availableHeight = pageHeight - (margin * 2);
+                
+                // キャンバスをページにフィットさせるためのスケール計算
+                const canvasAspectRatio = canvas.width / canvas.height;
+                const availableAspectRatio = availableWidth / availableHeight;
+                
+                let finalWidth, finalHeight;
+                if (canvasAspectRatio > availableAspectRatio) {
+                    // キャンバスが横長の場合、幅に合わせる
+                    finalWidth = availableWidth;
+                    finalHeight = availableWidth / canvasAspectRatio;
+                } else {
+                    // キャンバスが縦長の場合、高さに合わせる
+                    finalHeight = availableHeight;
+                    finalWidth = availableHeight * canvasAspectRatio;
+                }
+                
+                // 中央に配置するためのオフセット計算
+                const offsetX = margin + (availableWidth - finalWidth) / 2;
+                const offsetY = margin + (availableHeight - finalHeight) / 2;
+                
+                // キャンバスをPDFに追加
+                const imgData = canvas.toDataURL('image/jpeg', this.config.quality);
+                pdf.addImage(imgData, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+            }
+            
+            showProgress() {
+                const progressOverlay = document.getElementById('pdfProgress');
+                if (progressOverlay) {
+                    progressOverlay.classList.add('show');
+                }
+            }
+            
+            hideProgress() {
+                const progressOverlay = document.getElementById('pdfProgress');
+                if (progressOverlay) {
+                    progressOverlay.classList.remove('show');
+                }
+            }
+            
+            updateProgress(current, total, message) {
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                if (progressFill) {
+                    const percentage = (current / total) * 100;
+                    progressFill.style.width = percentage + '%';
+                }
+                
+                if (progressText) {
+                    progressText.textContent = `${current} / ${total} - ${message}`;
                 }
             }
         }
