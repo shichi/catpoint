@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onLastSlide: (callback) => ipcRenderer.on('last-slide', callback),
     onExportPDF: (callback) => ipcRenderer.on('export-pdf', callback),
     onPdfProgressUpdate: (callback) => ipcRenderer.on('pdf-progress-update', callback),
+    onOpenDirectory: (callback) => ipcRenderer.on('open-directory', (event, path) => callback(path)),
     
     // メインプロセスにメッセージを送信
     sendSlideChanged: (slideNumber) => ipcRenderer.invoke('slide-changed', slideNumber),
@@ -17,6 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     generatePDF: (options) => ipcRenderer.invoke('generate-pdf', options),
     getSlidesInDirectory: (directoryPath) => ipcRenderer.invoke('get-slides-in-directory', directoryPath),
 
+    // i18n関連
+    getLocalizedString: (key, ...args) => ipcRenderer.invoke('get-localized-string', key, ...args),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    
     // リスナーを削除
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

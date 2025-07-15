@@ -1,4 +1,4 @@
-# Universal Presentation Viewer
+# CatPoint
 
 **Configurable and Interactive HTML Slide Presentation Application**
 

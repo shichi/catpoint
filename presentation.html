@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBS Holdings プレゼンテーション</title>
+    <title>CatPoint</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -330,7 +330,7 @@
 </head>
 <body>
     <div id="loadingScreen">
-        <div class="loading-text">プレゼンテーションを準備中...</div>
+        <div class="loading-text" id="loadingText"></div>
     </div>
     
     <div id="container">
@@ -347,11 +347,11 @@
     <div id="controlsHoverArea"></div>
     
     <div id="controls">
-        <button class="control-btn" id="prevBtn">◀ 前へ</button>
+        <button class="control-btn" id="prevBtn"></button>
         <div id="pageIndicator">1 / 32</div>
-        <button class="control-btn" id="nextBtn">次へ ▶</button>
-        <button class="control-btn" id="fullscreenBtn">全画面</button>
-        <button class="control-btn" id="pdfExportBtn">PDF出力</button>
+        <button class="control-btn" id="nextBtn"></button>
+        <button class="control-btn" id="fullscreenBtn"></button>
+        <button class="control-btn" id="pdfExportBtn"></button>
     </div>
     
     <!-- カスタムマウスカーソル -->
@@ -363,11 +363,11 @@
     <!-- PDF出力進行状況 -->
     <div id="pdfProgress" class="pdf-progress-overlay">
         <div class="pdf-progress-content">
-            <h3>PDFエクスポート中...</h3>
+            <h3 id="pdfExportTitle"></h3>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
-            <div class="progress-text" id="progressText">0 / 0</div>
+            <div class="progress-text" id="progressText"></div>
         </div>
     </div>
     
@@ -408,12 +408,43 @@
                 }
             });
             
+            window.electronAPI.onOpenDirectory(async (path) => {
+                if (window.presentationApp) {
+                    await window.presentationApp.loadSlidesFromDirectory(path);
+                }
+            });
+
             window.electronAPI.onPdfProgressUpdate((event, data) => {
                 if (window.presentationApp && window.presentationApp.pdfExporter) {
                     window.presentationApp.pdfExporter.updateProgress(data.current, data.total, data.message);
                 }
             });
         }
+
+        // Function to set localized strings
+        async function setLocalizedStrings() {
+            console.log('setLocalizedStrings called');
+            if (window.electronAPI) {
+                console.log('electronAPI is available');
+                document.getElementById('loadingText').textContent = await window.electronAPI.getLocalizedString('loading_presentation');
+                console.log('loadingText set:', document.getElementById('loadingText').textContent);
+                document.getElementById('prevBtn').textContent = await window.electronAPI.getLocalizedString('menu_prev_slide');
+                console.log('prevBtn set:', document.getElementById('prevBtn').textContent);
+                document.getElementById('nextBtn').textContent = await window.electronAPI.getLocalizedString('menu_next_slide');
+                console.log('nextBtn set:', document.getElementById('nextBtn').textContent);
+                document.getElementById('fullscreenBtn').textContent = await window.electronAPI.getLocalizedString('menu_fullscreen');
+                console.log('fullscreenBtn set:', document.getElementById('fullscreenBtn').textContent);
+                document.getElementById('pdfExportBtn').textContent = await window.electronAPI.getLocalizedString('menu_export_pdf');
+                console.log('pdfExportBtn set:', document.getElementById('pdfExportBtn').textContent);
+                document.getElementById('pdfExportTitle').textContent = await window.electronAPI.getLocalizedString('pdf_exporting');
+                console.log('pdfExportTitle set:', document.getElementById('pdfExportTitle').textContent);
+            } else {
+                console.log('electronAPI is NOT available');
+            }
+        }
+
+        // Call setLocalizedStrings on DOMContentLoaded
+        window.addEventListener('DOMContentLoaded', setLocalizedStrings);
 
         class PresentationApp {
             constructor() {
@@ -565,7 +596,7 @@
                     this.useExampleSlides();
                 }
             }
-            
+
             async autoDetectSlideFiles(directoryPath) {
                 console.log(`自動スライド検出を開始...`, directoryPath || '（デフォルトパス）');
                 const result = await window.electronAPI.getSlidesInDirectory(directoryPath);
@@ -995,11 +1026,12 @@
                     this.toggleFullscreen();
                 });
                 
-                document.getElementById('pdfExportBtn').addEventListener('click', () => {
+                document.getElementById('pdfExportBtn').addEventListener('click', async () => {
                     if (this.config?.pdf?.enabled) {
                         this.exportToPDF();
                     } else {
-                        alert('PDF出力機能が無効になっています');
+                        const message = await window.electronAPI.getLocalizedString('pdf_export_disabled');
+                        alert(message);
                     }
                 });
                 
@@ -1013,7 +1045,10 @@
                     switch(e.key) {
                         case 'ArrowRight':
                         case ' ':
-                            e.preventDefault();
+                            // If the target is an input field, allow default behavior
+                            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                                return;
+                            }
                             this.nextSlide();
                             break;
                         case 'ArrowLeft':
@@ -1105,6 +1140,13 @@
                 }, 500);
             }
             
+            async loadSlidesFromDirectory(directoryPath) {
+                await this.detectSlides(directoryPath);
+                this.currentSlide = 1;
+                await this.loadSlide(this.currentSlide);
+                this.updateControls();
+            }
+
             async exportToPDF() {
                 if (this.isExportingPDF || !this.pdfExporter) return;
                 
@@ -1610,7 +1652,7 @@
             
             async exportWithChromium() {
                 if (!this.config.enabled) {
-                    throw new Error('PDF export is disabled in configuration');
+                    throw new Error(await window.electronAPI.getLocalizedString('pdf_export_disabled'));
                 }
                 
                 this.showProgress();
@@ -1627,10 +1669,10 @@
                     });
                     
                     if (!slideFiles || slideFiles.length === 0) {
-                        throw new Error('スライドファイルが見つかりません。スライドが正しく読み込まれているか確認してください。');
+                        throw new Error(await window.electronAPI.getLocalizedString('dialog_no_html_files_found'));
                     }
                     
-                    this.updateProgress(0, totalSlides, 'Chromium PDF生成を開始...');
+                    this.updateProgress(0, totalSlides, await window.electronAPI.getLocalizedString('pdf_generation_started', 'Chromium'));
                     
                     // IPCで送信可能な形式にデータを整理
                     const pdfConfig = {
@@ -1656,26 +1698,26 @@
                     });
                     
                     if (result.success) {
-                        this.updateProgress(totalSlides, totalSlides, '完了!');
+                        this.updateProgress(totalSlides, totalSlides, await window.electronAPI.getLocalizedString('pdf_generation_complete'));
                         setTimeout(() => this.hideProgress(), 1500);
-                        console.log('PDF生成が完了しました:', result.filepath);
-                        alert('PDFが正常に生成されました: ' + result.filepath);
+                        console.log(await window.electronAPI.getLocalizedString('pdf_generation_successful'), result.filepath);
+                        alert(await window.electronAPI.getLocalizedString('pdf_generation_successful_alert', result.filepath));
                     } else {
-                        console.error('PDF生成が失敗しました:', result.error);
-                        throw new Error(result.error || 'Chromium PDF generation failed');
+                        console.error(await window.electronAPI.getLocalizedString('pdf_generation_failed'), result.error);
+                        throw new Error(result.error || await window.electronAPI.getLocalizedString('pdf_chromium_generation_failed'));
                     }
                     
                 } catch (error) {
                     console.error('Chromium PDF export error:', error);
                     this.hideProgress();
-                    alert('PDF生成でエラーが発生しました: ' + error.message);
+                    alert(await window.electronAPI.getLocalizedString('pdf_export_failed_alert', error.message));
                     throw error;
                 }
             }
             
             async exportAllSlides() {
                 if (!this.config.enabled) {
-                    throw new Error('PDF export is disabled in configuration');
+                    throw new Error(await window.electronAPI.getLocalizedString('pdf_export_disabled'));
                 }
                 
                 this.showProgress();
@@ -1688,7 +1730,7 @@
                     const totalSlides = this.app.totalSlides;
                     
                     for (let i = 1; i <= totalSlides; i++) {
-                        this.updateProgress(i, totalSlides, `スライド ${i} を処理中...`);
+                        this.updateProgress(i, totalSlides, await window.electronAPI.getLocalizedString('pdf_processing_slide', i + 1));
                         
                         // スライドをロードしてサイズを取得
                         await this.app.loadSlide(i);
@@ -1722,12 +1764,12 @@
                     const filename = `${this.config.filename}_${new Date().toISOString().slice(0, 10)}.pdf`;
                     pdf.save(filename);
                     
-                    this.updateProgress(totalSlides, totalSlides, '完了!');
+                    this.updateProgress(totalSlides, totalSlides, await window.electronAPI.getLocalizedString('pdf_generation_complete'));
                     setTimeout(() => this.hideProgress(), 1500);
                     
                 } catch (error) {
                     this.hideProgress();
-                    throw error;
+                    throw new Error(await window.electronAPI.getLocalizedString('pdf_generation_failed') + ': ' + error.message);
                 }
             }
             

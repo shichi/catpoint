@@ -2,10 +2,30 @@ const { app, BrowserWindow, Menu, globalShortcut, ipcMain, dialog } = require('e
 const path = require('path');
 const fs = require('fs');
 
+// i18n setup
+let i18n = {};
+const userLocale = app.getLocale() ? app.getLocale().split('-')[0] : 'en'; // Fallback to 'en' if getLocale() is empty or null
+const localePath = path.join(__dirname, 'locales', `${userLocale}.json`);
+
+try {
+    i18n = require(localePath);
+} catch (error) {
+    console.warn(`Locale file for ${userLocale} not found, falling back to en.json`);
+    i18n = require(path.join(__dirname, 'locales', 'en.json'));
+}
+
+// Helper function for translation with placeholders
+function t(key, ...args) {
+    let translated = i18n[key] || key; // Fallback to key if not found
+    args.forEach((arg, index) => {
+        translated = translated.replace(`{${index}}`, arg);
+    });
+    return translated;
+}
+
 let mainWindow;
 
 function createWindow() {
-    // メインウィンドウを作成
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 900,
@@ -45,22 +65,32 @@ function createWindow() {
     // メニューを設定
     createMenu();
 
-    // グローバルショートカットを設定
+    // グローバルショートcutを設定
     setupGlobalShortcuts();
 }
 
 function createMenu() {
     const template = [
         {
-            label: 'アプリケーション',
+            label: t('menu_file'),
             submenu: [
                 {
-                    label: 'SBS Presentationについて',
-                    role: 'about'
+                    label: t('menu_open_directory'),
+                    accelerator: 'CmdOrCtrl+O',
+                    click: async () => {
+                        const result = await dialog.showOpenDialog(mainWindow, {
+                            properties: ['openDirectory'],
+                            title: t('dialog_select_slide_directory')
+                        });
+
+                        if (!result.canceled && result.filePaths.length > 0) {
+                            mainWindow.webContents.send('open-directory', result.filePaths[0]);
+                        }
+                    }
                 },
                 { type: 'separator' },
                 {
-                    label: '終了',
+                    label: t('menu_quit'),
                     accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
                     click: () => {
                         app.quit();
@@ -69,10 +99,40 @@ function createMenu() {
             ]
         },
         {
-            label: '表示',
+            label: t('menu_app'),
             submenu: [
                 {
-                    label: '再読み込み',
+                    label: t('menu_about_app'),
+                    click: () => {
+                        const aboutWindow = new BrowserWindow({
+                            width: 400,
+                            height: 300,
+                            resizable: false,
+                            title: t('menu_about_app'),
+                            webPreferences: {
+                                preload: path.join(__dirname, 'preload.js'),
+                                nodeIntegration: false,
+                                contextIsolation: true
+                            }
+                        });
+                        aboutWindow.loadFile('about.html');
+                    }
+                },
+                { type: 'separator' },
+                {
+                    label: t('menu_quit'),
+                    accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+                    click: () => {
+                        app.quit();
+                    }
+                }
+            ]
+        },
+        {
+            label: t('menu_view'),
+            submenu: [
+                {
+                    label: t('menu_reload'),
                     accelerator: 'CmdOrCtrl+R',
                     click: () => {
                         if (mainWindow) {
@@ -81,7 +141,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '強制再読み込み',
+                    label: t('menu_force_reload'),
                     accelerator: 'CmdOrCtrl+Shift+R',
                     click: () => {
                         if (mainWindow) {
@@ -91,7 +151,7 @@ function createMenu() {
                 },
                 { type: 'separator' },
                 {
-                    label: '実際のサイズ',
+                    label: t('menu_actual_size'),
                     accelerator: 'CmdOrCtrl+0',
                     click: () => {
                         if (mainWindow) {
@@ -100,7 +160,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '拡大',
+                    label: t('menu_zoom_in'),
                     accelerator: 'CmdOrCtrl+Plus',
                     click: () => {
                         if (mainWindow) {
@@ -110,7 +170,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '縮小',
+                    label: t('menu_zoom_out'),
                     accelerator: 'CmdOrCtrl+-',
                     click: () => {
                         if (mainWindow) {
@@ -121,7 +181,7 @@ function createMenu() {
                 },
                 { type: 'separator' },
                 {
-                    label: '全画面表示',
+                    label: t('menu_fullscreen'),
                     accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
                     click: () => {
                         if (mainWindow) {
@@ -130,7 +190,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '開発者ツール',
+                    label: t('menu_devtools'),
                     accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
                     click: () => {
                         if (mainWindow) {
@@ -141,10 +201,10 @@ function createMenu() {
             ]
         },
         {
-            label: 'プレゼンテーション',
+            label: t('menu_presentation'),
             submenu: [
                 {
-                    label: '次のスライド',
+                    label: t('menu_next_slide'),
                     accelerator: 'Right',
                     click: () => {
                         if (mainWindow) {
@@ -153,7 +213,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '前のスライド',
+                    label: t('menu_prev_slide'),
                     accelerator: 'Left',
                     click: () => {
                         if (mainWindow) {
@@ -162,7 +222,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '最初のスライド',
+                    label: t('menu_first_slide'),
                     accelerator: 'Home',
                     click: () => {
                         if (mainWindow) {
@@ -171,7 +231,7 @@ function createMenu() {
                     }
                 },
                 {
-                    label: '最後のスライド',
+                    label: t('menu_last_slide'),
                     accelerator: 'End',
                     click: () => {
                         if (mainWindow) {
@@ -181,7 +241,7 @@ function createMenu() {
                 },
                 { type: 'separator' },
                 {
-                    label: 'PDFエクスポート',
+                    label: t('menu_export_pdf'),
                     accelerator: 'CmdOrCtrl+E',
                     click: () => {
                         if (mainWindow) {
@@ -197,8 +257,21 @@ function createMenu() {
     if (process.platform === 'darwin') {
         template[0].label = app.getName();
         template[0].submenu.unshift({
-            label: `${app.getName()}について`,
-            role: 'about'
+            label: t('menu_about_app'),
+            click: () => {
+                const aboutWindow = new BrowserWindow({
+                    width: 400,
+                    height: 300,
+                    resizable: false,
+                    title: t('menu_about_app'),
+                    webPreferences: {
+                        preload: path.join(__dirname, 'preload.js'),
+                        nodeIntegration: false,
+                        contextIsolation: true
+                    }
+                });
+                aboutWindow.loadFile('about.html');
+            }
         });
     }
 
@@ -208,12 +281,6 @@ function createMenu() {
 
 function setupGlobalShortcuts() {
     // プレゼンテーション用のグローバルショートカット
-    globalShortcut.register('Space', () => {
-        if (mainWindow && mainWindow.isFocused()) {
-            mainWindow.webContents.send('next-slide');
-        }
-    });
-
     globalShortcut.register('Escape', () => {
         if (mainWindow && mainWindow.isFullScreen()) {
             mainWindow.setFullScreen(false);
@@ -228,45 +295,38 @@ ipcMain.handle('slide-changed', async (event, slideNumber) => {
     return true;
 });
 
+ipcMain.handle('get-localized-string', async (event, key, ...args) => {
+    return t(key, ...args);
+});
+
+ipcMain.handle('get-app-version', async () => {
+    return app.getVersion();
+});
+
+
+
 ipcMain.handle('get-slides-in-directory', async (event, directoryPath) => {
-    let path_to_scan = directoryPath;
-    
-    // パスが指定されていない、または無効な場合はダイアログを表示
-    while (!path_to_scan || !fs.existsSync(path_to_scan)) {
-        const result = await dialog.showOpenDialog(mainWindow, {
-            properties: ['openDirectory'],
-            title: 'スライドのあるディレクトリを選択してください'
-        });
-
-        if (result.canceled || result.filePaths.length === 0) {
-            // ユーザーがダイアログをキャンセルした場合は、アプリを終了するか、
-            // 何もせずに待機するかを選択できます。ここではnullを返します。
-            return null;
-        }
-        path_to_scan = result.filePaths[0];
-    }
-
     try {
-        const files = fs.readdirSync(path_to_scan);
+        const files = fs.readdirSync(directoryPath);
         const htmlFiles = files
             .filter(file => file.endsWith('.html') || file.endsWith('.htm'))
             .sort()
-            .map(file => path.join(path_to_scan, file));
+            .map(file => path.join(directoryPath, file));
         
-        // HTMLファイルが見つからない場合も、再度ダイアログを表示する
         if (htmlFiles.length === 0) {
-            dialog.showErrorBox('エラー', '選択されたディレクトリにHTMLファイルが見つかりませんでした。');
-            // nullを返して、再度ディレクトリ選択を促す
+            dialog.showErrorBox(t('dialog_error'), t('dialog_no_html_files_found'));
             return null;
         }
 
-        return { directory: path_to_scan, files: htmlFiles };
+        return { directory: directoryPath, files: htmlFiles };
     } catch (error) {
-        console.error(`Error reading directory ${path_to_scan}:`, error);
-        dialog.showErrorBox('エラー', `ディレクトリの読み込み中にエラーが発生しました: ${error.message}`);
+        console.error(`${t('dialog_error_reading_directory')} ${directoryPath}:`, error);
+        dialog.showErrorBox(t('dialog_error'), `${t('dialog_error_reading_directory')} ${error.message}`);
         return null;
     }
 });
+
+
 
 // PDF生成ハンドラー
 ipcMain.handle('generate-pdf', async (event, options) => {
@@ -287,22 +347,22 @@ async function generatePDF(options) {
     const path = require('path');
 
     if (!slides || slides.length === 0) {
-        console.error('No slides provided for PDF generation');
-        return { success: false, error: 'No slides provided for PDF generation' };
+        console.error(t('pdf_no_slides_provided'));
+        return { success: false, error: t('pdf_no_slides_provided') };
     }
 
     const startTime = Date.now();
-    console.log(`PDF generation started: processing ${slides.length} slides.`);
+    console.log(t('pdf_generation_started', slides.length));
 
     // Show save dialog first
     const result = await dialog.showSaveDialog(mainWindow, {
-        title: 'PDFを保存',
+        title: t('dialog_save_pdf'),
         defaultPath: filename,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+        filters: [{ name: t('dialog_pdf_files'), extensions: ['pdf'] }]
     });
 
     if (result.canceled || !result.filePath) {
-        return { success: false, error: 'Save cancelled by user' };
+        return { success: false, error: t('pdf_save_cancelled') };
     }
     const finalPdfPath = result.filePath;
 
@@ -312,13 +372,13 @@ async function generatePDF(options) {
 
         for (let i = 0; i < slides.length; i++) {
             const slidePath = slides[i];
-            console.log(`Processing slide ${i + 1}/${slides.length}: ${slidePath}`);
+            console.log(t('pdf_processing_slide', i + 1));
 
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('pdf-progress-update', {
                     current: i,
                     total: slides.length,
-                    message: `スライド ${i + 1} を処理中...`
+                    message: t('pdf_processing_slide', i + 1)
                 });
             }
 
@@ -326,10 +386,10 @@ async function generatePDF(options) {
             try {
                 const absolutePath = path.resolve(__dirname, slidePath);
                 if (!fs.existsSync(absolutePath)) {
-                    console.warn(`Slide file not found, skipping: ${absolutePath}`);
+                    console.warn(t('slide_file_not_found', i + 1));
                     // Add placeholder page
                     const placeholderPage = finalPdfDoc.addPage([600, 800]);
-                    placeholderPage.drawText(`Slide ${i + 1}: File not found`, { x: 50, y: 400, size: 20 });
+                    placeholderPage.drawText(t('slide_file_not_found', i + 1), { x: 50, y: 400, size: 20 });
                     continue;
                 }
 
@@ -359,6 +419,10 @@ async function generatePDF(options) {
                     });
                 });
 
+                // For the first slide, wait a bit longer for animations to complete
+                if (i === 0) {
+                    await page.waitForTimeout(3000); // Wait for 3 seconds
+                }
                 // A short wait for any final rendering after scripts have run
                 await page.waitForTimeout(500);
 
@@ -389,10 +453,10 @@ async function generatePDF(options) {
                 });
 
             } catch (error) {
-                console.error(`Failed to process slide ${i + 1} (${slidePath}):`, error);
+                console.error(`${t('slide_generation_failed', i + 1)} (${slidePath}):`, error);
                 // Add placeholder page on error
                 const placeholderPage = finalPdfDoc.addPage([600, 800]);
-                placeholderPage.drawText(`Slide ${i + 1}: Generation failed`, { x: 50, y: 400, size: 20 });
+                placeholderPage.drawText(t('slide_generation_failed', i + 1), { x: 50, y: 400, size: 20 });
                 placeholderPage.drawText(error.message.substring(0, 200), { x: 50, y: 350, size: 10 });
             } finally {
                 await page.close();
@@ -404,21 +468,21 @@ async function generatePDF(options) {
 
         const endTime = Date.now();
         const totalTime = (endTime - startTime) / 1000;
-        console.log(`PDF generation successful: ${finalPdfPath}`);
-        console.log(`Total time: ${totalTime.toFixed(1)}s`);
+        console.log(`${t('pdf_generation_successful')} ${finalPdfPath}`);
+        console.log(`${t('total_time', totalTime.toFixed(1))}`);
 
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('pdf-progress-update', {
                 current: slides.length,
                 total: slides.length,
-                message: `完了! (${totalTime.toFixed(1)}秒)`
+                message: `${t('pdf_generation_complete')} (${totalTime.toFixed(1)}秒)`
             });
         }
 
         return { success: true, filepath: finalPdfPath, processingTime: totalTime };
 
     } catch (error) {
-        console.error('PDF generation failed:', error);
+        console.error(`${t('pdf_generation_failed')}`, error);
         return { success: false, error: error.message };
     } finally {
         await browser.close();
@@ -426,7 +490,7 @@ async function generatePDF(options) {
 }
 
 // アプリケーションの準備が完了したときの処理
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     createWindow();
 
     app.on('activate', () => {

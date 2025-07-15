@@ -1,7 +1,7 @@
 {
-  "name": "sbs-presentation-app",
+  "name": "catpoint-app",
   "version": "1.0.0",
-  "description": "SBS Holdings プレゼンテーションアプリケーション",
+  "description": "CatPoint アプリケーション",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -16,7 +16,7 @@
   "keywords": [
     "presentation",
     "electron",
-    "sbs",
+    "catpoint",
     "logistics"
   ],
   "author": "SBS Holdings",
@@ -26,8 +26,8 @@
     "electron-builder": "^24.6.4"
   },
   "build": {
-    "appId": "com.sbs.presentation",
-    "productName": "SBS Presentation",
+    "appId": "com.catpoint.app",
+    "productName": "CatPoint",
     "directories": {
       "output": "dist"
     },
