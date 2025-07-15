@@ -15,7 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // PDF生成関連
     generatePDF: (options) => ipcRenderer.invoke('generate-pdf', options),
-    
+    getSlidesInDirectory: (directoryPath) => ipcRenderer.invoke('get-slides-in-directory', directoryPath),
+
     // リスナーを削除
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

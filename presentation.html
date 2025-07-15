@@ -335,7 +335,7 @@
     
     <div id="container">
         <div id="slideContent">
-            <iframe id="currentSlide" class="slide-frame" src="01.html"></iframe>
+            <iframe id="currentSlide" class="slide-frame"></iframe>
         </div>
         <div class="transition-overlay" id="transitionOverlay"></div>
     </div>
@@ -352,10 +352,6 @@
         <button class="control-btn" id="nextBtn">次へ ▶</button>
         <button class="control-btn" id="fullscreenBtn">全画面</button>
         <button class="control-btn" id="pdfExportBtn">PDF出力</button>
-        <select class="control-select" id="pdfMethodSelect">
-            <option value="chromium">検索可能PDF</option>
-            <option value="canvas">画像PDF</option>
-        </select>
     </div>
     
     <!-- カスタムマウスカーソル -->
@@ -562,57 +558,25 @@
                 }
             }
             
-            detectSlides() {
+            async detectSlides(directoryPath = null) {
                 if (this.config?.presentation?.autoDetectSlides) {
-                    // 自動検出の場合、01.html-99.htmlの範囲で存在するファイルを検出
-                    this.autoDetectSlideFiles();
+                    await this.autoDetectSlideFiles(directoryPath);
                 } else {
-                    // 固定数の場合または設定がない場合
                     this.useExampleSlides();
                 }
             }
             
-            async autoDetectSlideFiles() {
-                const files = [];
-                let foundFiles = 0;
-                let consecutiveNotFound = 0;
-                
-                console.log('自動スライド検出を開始...');
-                
-                // 01.html から 99.html まで順次チェック
-                for (let i = 1; i <= 99; i++) {
-                    const num = i.toString().padStart(2, '0');
-                    const filename = `${num}.html`;
-                    
-                    try {
-                        const response = await fetch(filename, { method: 'HEAD' });
-                        if (response.ok) {
-                            files.push(filename);
-                            foundFiles++;
-                            consecutiveNotFound = 0;
-                            console.log(`スライドファイル発見: ${filename}`);
-                        } else {
-                            consecutiveNotFound++;
-                            // 5個連続で見つからないか、最初から3個見つからない場合は終了
-                            if (consecutiveNotFound >= 5 || (foundFiles === 0 && i >= 3)) {
-                                break;
-                            }
-                        }
-                    } catch (error) {
-                        consecutiveNotFound++;
-                        if (consecutiveNotFound >= 5 || (foundFiles === 0 && i >= 3)) {
-                            break;
-                        }
-                    }
-                }
-                
-                this.htmlFiles = files;
-                this.totalSlides = files.length;
-                
-                console.log(`自動検出結果: ${this.totalSlides}個のスライドを発見`, files);
-                
-                if (this.totalSlides === 0) {
-                    console.warn('スライドファイルが見つかりません。slides-exampleを使用します。');
+            async autoDetectSlideFiles(directoryPath) {
+                console.log(`自動スライド検出を開始...`, directoryPath || '（デフォルトパス）');
+                const result = await window.electronAPI.getSlidesInDirectory(directoryPath);
+
+                if (result && result.files.length > 0) {
+                    this.htmlFiles = result.files;
+                    this.totalSlides = result.files.length;
+                    this.config.presentation.slideDirectory = result.directory;
+                    console.log(`自動検出結果: ${this.totalSlides}個のスライドを発見`, this.htmlFiles);
+                } else {
+                    console.warn('スライドファイルが見つかりません。サンプルスライドを使用します。');
                     this.useExampleSlides();
                 }
             }
@@ -642,7 +606,7 @@
             async init() {
                 await this.loadConfig();
                 this.applyConfig();
-                this.detectSlides();
+                await this.detectSlides(this.config.presentation.slideDirectory);
                 this.setupEventListeners();
                 this.setupResizeObserver();
                 this.setupMouseTracker();
@@ -1162,9 +1126,7 @@
                         this.resizeSlide();
                     }
                     
-                    // 選択されたメソッドを取得
-                    const methodSelect = document.getElementById('pdfMethodSelect');
-                    const selectedMethod = methodSelect ? methodSelect.value : this.config?.pdf?.method || 'chromium';
+                    const selectedMethod = 'chromium';
                     
                     if (selectedMethod === 'chromium') {
                         await this.pdfExporter.exportWithChromium();
