@@ -37,11 +37,6 @@
   "pdf_no_slides_provided": "PDF生成用のスライドが提供されていません",
   "pdf_chromium_generation_failed": "Chromium PDF生成に失敗しました",
   "pdf_export_failed_alert": "PDFエクスポートに失敗しました: {0}",
-  "pdf_generation_successful_alert": "PDFが正常に生成されました: {0}",
-  "loading_presentation": "プレゼンテーションを準備中...",
-  "pdf_exporting": "PDFエクスポート中...",
-  "slide_file_not_found": "スライド {0}: ファイルが見つかりません",
-  "slide_generation_failed": "スライド {0}: 生成に失敗しました",
-  "total_time": "合計時間: {0}秒",
-  "version": "バージョン"
+  "prompt_go_to_slide": "スライド番号を入力してください (1-{0}):",
+  "alert_invalid_slide_number": "無効なスライド番号です。1から{0}までの数字を入力してください。"
 }

@@ -352,6 +352,7 @@
         <button class="control-btn" id="nextBtn"></button>
         <button class="control-btn" id="fullscreenBtn"></button>
         <button class="control-btn" id="pdfExportBtn"></button>
+        <button class="control-btn" id="goToSlideBtn"></button>
     </div>
     
     <!-- カスタムマウスカーソル -->
@@ -374,6 +375,7 @@
     <!-- 描画キャンバス -->
     <canvas id="drawingCanvas"></canvas>
 
+    <script src="goToSlide.js"></script>
     <script>
         // Electron環境での初期化
         if (window.electronAPI) {
@@ -794,7 +796,9 @@
                                 iframe.contentWindow.document.body.addEventListener('wheel', (e) => {
                                     if (window.electronAPI) {
                                         window.electronAPI.sendIframeWheelData({
-                                            deltaY: e.deltaY
+                                            deltaY: e.deltaY,
+                                            deltaX: e.deltaX,
+                                            shiftKey: e.shiftKey
                                         });
                                     }
                                 }, { passive: false });
@@ -993,15 +997,25 @@
             
             // 拡大時のパン機能は削除（描画機能との競合回避）
             
-            handleWheelScroll(deltaY) {
+            handleWheelScroll(data) {
+                console.log('handleWheelScroll called with:', data);
                 if (!this.isZoomed) return;
                 
-                // ホイールの上下移動をパンオフセットのy成分に反映
-                this.panOffset.y -= deltaY * (this.scrollSensitivity / 100);
-                
-                // スクロール範囲を制限（オプション）
                 const maxScroll = 200; // 最大スクロール量
-                this.panOffset.y = Math.max(-maxScroll, Math.min(maxScroll, this.panOffset.y));
+
+                if (data.shiftKey) {
+                    // Shiftキーが押されている場合は横スクロール
+                    const delta = data.deltaX * (this.scrollSensitivity / 100); // Use deltaX for horizontal scroll
+                    this.panOffset.x -= delta;
+                    this.panOffset.x = Math.max(-maxScroll, Math.min(maxScroll, this.panOffset.x));
+                    console.log('Horizontal scroll. panOffset.x:', this.panOffset.x, 'deltaX:', data.deltaX);
+                } else {
+                    // 通常は縦スクロール
+                    const delta = data.deltaY * (this.scrollSensitivity / 100); // Use deltaY for vertical scroll
+                    this.panOffset.y -= delta;
+                    this.panOffset.y = Math.max(-maxScroll, Math.min(maxScroll, this.panOffset.y));
+                    console.log('Vertical scroll. panOffset.y:', this.panOffset.y, 'deltaY:', data.deltaY);
+                }
                 
                 this.resizeSlide();
                 
@@ -1026,26 +1040,60 @@
             }
             
             async transitionToSlide(targetSlide, direction = 'next') {
-                if (this.isTransitioning) return;
+                // 既存のトランジションがあれば中止
+                if (this.transitionAbortController) {
+                    this.transitionAbortController.abort();
+                }
+                this.transitionAbortController = new AbortController();
+                const signal = this.transitionAbortController.signal;
+
+                if (this.isTransitioning) {
+                    // 既に遷移中の場合は、即座に新しいスライドに切り替える
+                    this.currentSlide = targetSlide;
+                    this.isTransitioning = false; // 強制的に遷移中フラグを解除
+                    await this.loadSlide(this.currentSlide);
+                    this.updateControls();
+                    return;
+                }
+
                 this.isTransitioning = true;
                 
                 const currentIframe = document.getElementById('currentSlide');
                 
                 // ディゾルブエフェクトで遷移
-                await this.dissolveTransition(currentIframe, targetSlide);
+                await this.dissolveTransition(currentIframe, targetSlide, signal);
                 
                 this.currentSlide = targetSlide;
                 this.isTransitioning = false;
                 this.updateControls();
+                this.transitionAbortController = null; // 完了したらクリア
             }
             
-            async dissolveTransition(currentIframe, targetSlide) {
+            async dissolveTransition(currentIframe, targetSlide, signal) {
                 return new Promise(async (resolve) => {
+                    let timeoutId;
+
+                    const cleanup = () => {
+                        clearTimeout(timeoutId);
+                        signal.removeEventListener('abort', onAbort);
+                    };
+
+                    const onAbort = () => {
+                        cleanup();
+                        resolve(); // Abort signal received, resolve immediately
+                    };
+
+                    signal.addEventListener('abort', onAbort);
+
                     // フェードアウト
                     currentIframe.style.opacity = '0';
                     
                     // 0.5秒後に新しいスライドをロード
-                    setTimeout(async () => {
+                    timeoutId = setTimeout(async () => {
+                        if (signal.aborted) {
+                            cleanup();
+                            return resolve();
+                        }
                         // 描画をクリア
                         if (this.drawingManager) {
                             this.drawingManager.clearAll();
@@ -1055,7 +1103,8 @@
                         // フェードイン
                         currentIframe.style.opacity = '1';
                         
-                        setTimeout(resolve, 500);
+                        cleanup();
+                        resolve();
                     }, 500);
                 });
             }
@@ -1137,7 +1186,7 @@
                 if (window.electronAPI) {
                     window.electronAPI.onUpdateWheelData((event, data) => {
                         if (this.isZoomed) {
-                            this.handleWheelScroll(data.deltaY);
+                            this.handleWheelScroll(data);
                         }
                     });
                 }
@@ -1194,6 +1243,15 @@
                 this.currentSlide = 1;
                 await this.loadSlide(this.currentSlide);
                 this.updateControls();
+            }
+
+            getSlideTitles() {
+                const titles = this.htmlFiles.map(filePath => {
+                    const fileName = filePath.split(/[\\/]/).pop(); // ファイル名を取得
+                    return fileName.replace(/\.html$/, ''); // .html拡張子を削除
+                });
+                console.log('Renderer returning slide titles:', titles);
+                return titles;
             }
 
             async exportToPDF() {

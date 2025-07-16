@@ -37,6 +37,8 @@
   "pdf_no_slides_provided": "No slides provided for PDF generation",
   "pdf_chromium_generation_failed": "Chromium PDF generation failed",
   "pdf_export_failed_alert": "PDF export failed: {0}",
+  "prompt_go_to_slide": "Enter slide number (1-{0}):",
+  "alert_invalid_slide_number": "Invalid slide number. Please enter a number between 1 and {0}.",
   "pdf_generation_successful_alert": "PDF successfully generated: {0}",
   "loading_presentation": "Preparing presentation...",
   "pdf_exporting": "Exporting PDF...",

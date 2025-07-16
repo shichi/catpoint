@@ -279,6 +279,11 @@ function createMenu() {
     Menu.setApplicationMenu(menu);
 }
 
+// スライドリストを更新する関数
+async function updateGoToSlideMenu() {
+    // This function will be re-implemented to populate the menu with placeholders
+}
+
 function setupGlobalShortcuts() {
     // プレゼンテーション用のグローバルショートカット
     globalShortcut.register('Escape', () => {
@@ -303,6 +308,13 @@ ipcMain.handle('get-app-version', async () => {
     return app.getVersion();
 });
 
+// Renderer processに特定のスライドへの移動を指示
+ipcMain.on('go-to-slide-by-index', (event, index) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('go-to-slide', index);
+    }
+});
+
 // iframeからのマウスデータを受信し、レンダラープロセスに転送
 ipcMain.on('send-iframe-mouse-data', (event, data) => {
     if (mainWindow) {
@@ -319,6 +331,7 @@ ipcMain.on('send-iframe-contextmenu', (event, data) => {
 
 // iframeからのホイールイベントを受信し、レンダラープロセスに転送
 ipcMain.on('send-iframe-wheel-data', (event, data) => {
+    console.log('Received wheel data from iframe:', data);
     if (mainWindow) {
         mainWindow.webContents.send('update-wheel-data', data);
     }

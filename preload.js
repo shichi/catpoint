@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateWheelData: (callback) => ipcRenderer.on('update-wheel-data', callback),
 
     // メインプロセスにメッセージを送信
-    sendSlideChanged: (slideNumber) => ipcRenderer.invoke('slide-changed', slideNumber),
+    sendSlideChanged: (slideNumber) => ipcRenderer.invoke('slide-changed'),
     
     // PDF生成関連
     generatePDF: (options) => ipcRenderer.invoke('generate-pdf', options),
