@@ -10,7 +10,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onExportPDF: (callback) => ipcRenderer.on('export-pdf', callback),
     onPdfProgressUpdate: (callback) => ipcRenderer.on('pdf-progress-update', callback),
     onOpenDirectory: (callback) => ipcRenderer.on('open-directory', (event, path) => callback(path)),
+    // メインプロセスからマウス位置の更新を受信
+    onUpdateMousePosition: (callback) => ipcRenderer.on('update-mouse-position', callback),
     
+    // iframeからのマウスデータをメインプロセスに送信
+    sendIframeMouseData: (data) => ipcRenderer.send('send-iframe-mouse-data', data),
+    // iframeからのcontextmenuイベントをメインプロセスに送信
+    sendIframeContextmenu: (data) => ipcRenderer.send('send-iframe-contextmenu', data),
+    // iframeからのホイールイベントをメインプロセスに送信
+    sendIframeWheelData: (data) => ipcRenderer.send('send-iframe-wheel-data', data),
+    // メインプロセスからズームトグルイベントを受信
+    onToggleZoom: (callback) => ipcRenderer.on('toggle-zoom', callback),
+    // メインプロセスからホイールイベントを受信
+    onUpdateWheelData: (callback) => ipcRenderer.on('update-wheel-data', callback),
+
     // メインプロセスにメッセージを送信
     sendSlideChanged: (slideNumber) => ipcRenderer.invoke('slide-changed', slideNumber),
     
@@ -22,6 +35,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getLocalizedString: (key, ...args) => ipcRenderer.invoke('get-localized-string', key, ...args),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     
+    // 新しいIPCチャネル: パス解決をメインプロセスに要求
+    resolvePath: (...args) => ipcRenderer.invoke('resolve-path', ...args),
+
     // リスナーを削除
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

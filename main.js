@@ -303,6 +303,32 @@ ipcMain.handle('get-app-version', async () => {
     return app.getVersion();
 });
 
+// iframeからのマウスデータを受信し、レンダラープロセスに転送
+ipcMain.on('send-iframe-mouse-data', (event, data) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('update-mouse-position', data);
+    }
+});
+
+// iframeからのcontextmenuイベントを受信し、レンダラープロセスに転送
+ipcMain.on('send-iframe-contextmenu', (event, data) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('toggle-zoom', data);
+    }
+});
+
+// iframeからのホイールイベントを受信し、レンダラープロセスに転送
+ipcMain.on('send-iframe-wheel-data', (event, data) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('update-wheel-data', data);
+    }
+});
+
+// パス解決のIPCハンドラ
+ipcMain.handle('resolve-path', async (event, ...args) => {
+    return path.resolve(...args);
+});
+
 
 
 ipcMain.handle('get-slides-in-directory', async (event, directoryPath) => {

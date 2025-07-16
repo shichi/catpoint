@@ -57,7 +57,7 @@
             width: 100vw;
             height: 100vh;
             z-index: 1000;
-            pointer-events: auto;
+            pointer-events: none; /* ここをnoneに変更 */
             background: transparent;
         }
         
@@ -198,7 +198,7 @@
             border-radius: 50%;
             pointer-events: none;
             z-index: 10001; /* オーバーレイより上に配置 */
-            mix-blend-mode: screen;
+            
             transform: translate(-50%, -50%);
             transition: none;
             opacity: 0;
@@ -757,7 +757,10 @@
                 
                 this.isSlideLoaded = false;
                 
-                return new Promise((resolve, reject) => {
+                return new Promise(async (resolve, reject) => {
+                    const absolutePath = await window.electronAPI.resolvePath(fileName);
+                    const fileUrl = `file://${absolutePath}`;
+
                     iframe.onload = () => {
                         // スライドが完全にレンダリングされるまで待機
                         setTimeout(() => {
@@ -765,6 +768,36 @@
                             this.resizeSlide();
                             this.isSlideLoaded = true;
                             
+                            // iframe内のマウスイベントを捕捉し、メインプロセスに送信
+                            if (iframe.contentWindow) {
+                                iframe.contentWindow.document.body.addEventListener('mousemove', (e) => {
+                                    if (window.electronAPI) {
+                                        window.electronAPI.sendIframeMouseData({
+                                            clientX: e.clientX,
+                                            clientY: e.clientY
+                                        });
+                                    }
+                                });
+                                // iframe内の右クリックイベントを捕捉し、メインプロセスに送信
+                                iframe.contentWindow.document.body.addEventListener('contextmenu', (e) => {
+                                    e.preventDefault(); // iframe内のコンテキストメニューを無効化
+                                    if (window.electronAPI) {
+                                        window.electronAPI.sendIframeContextmenu({
+                                            clientX: e.clientX,
+                                            clientY: e.clientY
+                                        });
+                                    }
+                                });
+                                // iframe内のホイールイベントを捕捉し、メインプロセスに送信
+                                iframe.contentWindow.document.body.addEventListener('wheel', (e) => {
+                                    if (window.electronAPI) {
+                                        window.electronAPI.sendIframeWheelData({
+                                            deltaY: e.deltaY
+                                        });
+                                    }
+                                }, { passive: false });
+                            }
+
                             // 初期表示時は追加でリサイズを実行
                             setTimeout(() => {
                                 if (this.currentSlide === 1) {
@@ -783,7 +816,7 @@
                     };
                     
                     console.log(`Loading slide: ${fileName}`);
-                    iframe.src = fileName;
+                    iframe.src = fileUrl;
                 });
             }
             
@@ -1002,6 +1035,10 @@
                     
                     // 0.5秒後に新しいスライドをロード
                     setTimeout(async () => {
+                        // 描画をクリア
+                        if (this.drawingManager) {
+                            this.drawingManager.clearAll();
+                        }
                         await this.loadSlide(targetSlide);
                         
                         // フェードイン
@@ -1086,12 +1123,13 @@
                 });
                 
                 // ホイールイベントでズーム時のスクロール
-                window.addEventListener('wheel', (e) => {
-                    if (this.isZoomed) {
-                        e.preventDefault();
-                        this.handleWheelScroll(e.deltaY);
-                    }
-                }, { passive: false });
+                if (window.electronAPI) {
+                    window.electronAPI.onUpdateWheelData((event, data) => {
+                        if (this.isZoomed) {
+                            this.handleWheelScroll(data.deltaY);
+                        }
+                    });
+                }
             }
             
             async nextSlide() {
@@ -1263,25 +1301,24 @@
             }
             
             setupEventListeners() {
-                // マウスオーバーレイでドラッグイベントを捕捉
-                const overlay = document.getElementById('mouseOverlay');
-                if (!overlay) return;
+                // 描画キャンバスでドラッグイベントを捕捉
+                if (!this.canvas) return;
                 
-                overlay.addEventListener('mousedown', (e) => {
+                this.canvas.addEventListener('mousedown', (e) => {
                     // 左クリックでドラッグ開始（右クリックはズーム用なので除外）
                     if (e.button === 0) {
                         this.startDrawing(e.clientX, e.clientY);
                     }
                 });
                 
-                overlay.addEventListener('mousemove', (e) => {
+                this.canvas.addEventListener('mousemove', (e) => {
                     if (this.isDrawing) {
                         this.draw(e.clientX, e.clientY);
                         e.stopPropagation(); // 描画中はパンを無効化
                     }
                 });
                 
-                overlay.addEventListener('mouseup', (e) => {
+                this.canvas.addEventListener('mouseup', (e) => {
                     if (this.isDrawing) {
                         this.stopDrawing();
                     }
@@ -1384,6 +1421,14 @@
                     return { x: screenX, y: screenY };
                 }
                 
+                const iframe = document.getElementById('currentSlide');
+                if (!iframe) return { x: screenX, y: screenY };
+                const iframeRect = iframe.getBoundingClientRect();
+
+                // スクリーン座標からiframeのオフセットを引く
+                const relativeX = screenX - iframeRect.left;
+                const relativeY = screenY - iframeRect.top;
+
                 if (app.isZoomed) {
                     // 拡大時はマウス位置を通常時の座標系に逆変換
                     const container = document.getElementById('slideContent');
@@ -1395,19 +1440,19 @@
                         const adjustedZoomCenterY = app.zoomCenter.y + app.panOffset.y;
                         
                         // ズーム中心からの相対位置を計算（パンオフセット考慮）
-                        const deltaX = screenX - adjustedZoomCenterX;
-                        const deltaY = screenY - adjustedZoomCenterY;
+                        const deltaX = relativeX - (adjustedZoomCenterX - iframeRect.left); // iframe相対座標で計算
+                        const deltaY = relativeY - (adjustedZoomCenterY - iframeRect.top); // iframe相対座標で計算
                         
                         // ズーム倍率で逆算して通常時の座標に変換
-                        const normalizedX = app.zoomCenter.x + (deltaX / app.zoomFactor);
-                        const normalizedY = app.zoomCenter.y + (deltaY / app.zoomFactor);
+                        const normalizedX = (adjustedZoomCenterX - iframeRect.left) + (deltaX / app.zoomFactor);
+                        const normalizedY = (adjustedZoomCenterY - iframeRect.top) + (deltaY / app.zoomFactor);
                         
                         return { x: normalizedX, y: normalizedY };
                     }
                 }
                 
-                // 通常時はそのまま（標準座標系）
-                return { x: screenX, y: screenY };
+                // 通常時はiframe相対座標をそのまま使用
+                return { x: relativeX, y: relativeY };
             }
             
             // キャンバスのズーム状態を更新
@@ -1454,53 +1499,27 @@
                 let lastTrailTime = 0;
                 const trailThrottle = 16; // 60fps相当
                 
-                // オーバーレイでマウス移動を追跡
-                const overlay = document.getElementById('mouseOverlay');
-                if (overlay) {
-                    overlay.addEventListener('mousemove', (e) => {
-                        this.updateCursor(e.clientX, e.clientY);
+                // メインプロセスからマウス位置の更新を受信
+                if (window.electronAPI) {
+                    window.electronAPI.onUpdateMousePosition((event, data) => {
+                        const iframe = document.getElementById('currentSlide');
+                        if (!iframe) return;
+                        const iframeRect = iframe.getBoundingClientRect();
                         
-                        // 軌跡描画をスロットリング
+                        // iframe内の相対座標をメインドキュメントの絶対座標に変換
+                        const absoluteX = data.clientX + iframeRect.left;
+                        const absoluteY = data.clientY + iframeRect.top;
+
+                        this.updateCursor(absoluteX, absoluteY);
                         const now = Date.now();
                         if (now - lastTrailTime > trailThrottle) {
-                            this.createTrail(e.clientX, e.clientY);
+                            this.createTrail(absoluteX, absoluteY);
                             lastTrailTime = now;
                         }
                     });
-                    
-                    // クリックイベントを下の要素に転送
-                    overlay.addEventListener('click', (e) => {
-                        this.forwardEventToUnderlyingElement(e, 'click');
-                    });
-                    
-                    overlay.addEventListener('mousedown', (e) => {
-                        this.cursor.classList.add('clicked');
-                        this.forwardEventToUnderlyingElement(e, 'mousedown');
-                    });
-                    
-                    overlay.addEventListener('mouseup', (e) => {
-                        this.cursor.classList.remove('clicked');
-                        this.forwardEventToUnderlyingElement(e, 'mouseup');
-                    });
-                    
-                    // 右クリックでズームトグル
-                    overlay.addEventListener('contextmenu', (e) => {
-                        e.preventDefault(); // コンテキストメニューを無効化
-                        if (window.presentationApp) {
-                            window.presentationApp.toggleZoom(e.clientX, e.clientY);
-                        }
-                    });
-                    
-                    // ダブルクリックでズームリセット
-                    overlay.addEventListener('dblclick', (e) => {
-                        if (window.presentationApp && window.presentationApp.isZoomed) {
-                            window.presentationApp.toggleZoom(e.clientX, e.clientY);
-                        }
-                        this.forwardEventToUnderlyingElement(e, 'dblclick');
-                    });
                 }
-                
-                // ドキュメント全体でもマウス移動を追跡（フォールバック）
+
+                // ドキュメント全体でマウス移動を追跡
                 document.addEventListener('mousemove', (e) => {
                     this.updateCursor(e.clientX, e.clientY);
                     
@@ -1512,13 +1531,56 @@
                     }
                 });
                 
-                // マウスクリックエフェクト
-                document.addEventListener('mousedown', () => {
+                // クリックイベントをドキュメント全体で捕捉
+                document.addEventListener('click', (e) => {
+                    // コントロール領域内のクリックは処理しない
+                    const controls = document.getElementById('controls');
+                    if (controls && controls.contains(e.target)) {
+                        return;
+                    }
+                    // ここで必要に応じてクリックイベントを処理
+                });
+                
+                document.addEventListener('mousedown', (e) => {
+                    // コントロール領域内のクリックは処理しない
+                    const controls = document.getElementById('controls');
+                    if (controls && controls.contains(e.target)) {
+                        return;
+                    }
                     this.cursor.classList.add('clicked');
                 });
                 
-                document.addEventListener('mouseup', () => {
+                document.addEventListener('mouseup', (e) => {
                     this.cursor.classList.remove('clicked');
+                });
+                
+                // 右クリックでズームトグル
+                if (window.electronAPI) {
+                    window.electronAPI.onToggleZoom((event, data) => {
+                        const iframe = document.getElementById('currentSlide');
+                        if (!iframe) return;
+                        const iframeRect = iframe.getBoundingClientRect();
+                        
+                        // iframe内の相対座標をメインドキュメントの絶対座標に変換
+                        const absoluteX = data.clientX + iframeRect.left;
+                        const absoluteY = data.clientY + iframeRect.top;
+
+                        if (window.presentationApp) {
+                            window.presentationApp.toggleZoom(absoluteX, absoluteY);
+                        }
+                    });
+                }
+                
+                // ダブルクリックでズームリセット
+                document.addEventListener('dblclick', (e) => {
+                    // コントロール領域内のダブルクリックは処理しない
+                    const controls = document.getElementById('controls');
+                    if (controls && controls.contains(e.target)) {
+                        return;
+                    }
+                    if (window.presentationApp && window.presentationApp.isZoomed) {
+                        window.presentationApp.toggleZoom(e.clientX, e.clientY);
+                    }
                 });
                 
                 // マウスがウィンドウから出た時の処理
@@ -1589,49 +1651,7 @@
                 this.trails = [];
             }
             
-            forwardEventToUnderlyingElement(originalEvent, eventType) {
-                // コントロール領域内のクリックは転送しない
-                const controls = document.getElementById('controls');
-                if (controls) {
-                    const controlsRect = controls.getBoundingClientRect();
-                    if (originalEvent.clientX >= controlsRect.left &&
-                        originalEvent.clientX <= controlsRect.right &&
-                        originalEvent.clientY >= controlsRect.top &&
-                        originalEvent.clientY <= controlsRect.bottom) {
-                        return; // コントロール領域内なので転送しない
-                    }
-                }
-                
-                // オーバーレイを一時的に無効化
-                const overlay = document.getElementById('mouseOverlay');
-                if (!overlay) return;
-                
-                overlay.style.pointerEvents = 'none';
-                
-                // 同じ座標の下にある要素を取得
-                const elementBelow = document.elementFromPoint(originalEvent.clientX, originalEvent.clientY);
-                
-                // オーバーレイを再度有効化
-                overlay.style.pointerEvents = 'auto';
-                
-                if (elementBelow && elementBelow !== overlay) {
-                    // 新しいイベントを作成して転送
-                    const newEvent = new MouseEvent(eventType, {
-                        bubbles: true,
-                        cancelable: true,
-                        clientX: originalEvent.clientX,
-                        clientY: originalEvent.clientY,
-                        button: originalEvent.button,
-                        buttons: originalEvent.buttons,
-                        ctrlKey: originalEvent.ctrlKey,
-                        shiftKey: originalEvent.shiftKey,
-                        altKey: originalEvent.altKey,
-                        metaKey: originalEvent.metaKey
-                    });
-                    
-                    elementBelow.dispatchEvent(newEvent);
-                }
-            }
+            
         }
 
         // PDFエクスポータークラス
