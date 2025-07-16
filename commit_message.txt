@@ -1,0 +1,9 @@
+feat: Improve mouse interaction and pointer display in presentation
+
+This commit addresses several issues related to mouse interaction and custom pointer display within the CatPoint application:
+
+- Ensures mouse events (mousemove, contextmenu, wheel) from iframes are correctly propagated to the main process and handled by the renderer process.
+- Fixes the custom mouse pointer and drawing marker position discrepancies by accurately mapping iframe-relative coordinates to main document absolute coordinates.
+- Resolves the issue where the custom mouse pointer was not visible over HTML content by removing the `mix-blend-mode` CSS property.
+- Implements clearing of drawing lines when navigating between slides.
+- Corrects the `path` module import in `preload.js` and handles path resolution via the main process to comply with Electron's security best practices.

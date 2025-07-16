@@ -458,6 +458,7 @@
                 this.slideActualSize = { width: 1280, height: 720 };
                 this.resizeObserver = null;
                 this.isSlideLoaded = false;
+                this.finalScale = 1; // 新しく追加
                 
                 // マウス関連
                 this.mouseTracker = null;
@@ -772,6 +773,7 @@
                             if (iframe.contentWindow) {
                                 iframe.contentWindow.document.body.addEventListener('mousemove', (e) => {
                                     if (window.electronAPI) {
+                                        console.log(`iframe mousemove: e.clientX=${e.clientX}, e.clientY=${e.clientY}, pageXOffset=${iframe.contentWindow.pageXOffset}, pageYOffset=${iframe.contentWindow.pageYOffset}, iframeRect.left=${iframe.getBoundingClientRect().left}, iframeRect.top=${iframe.getBoundingClientRect().top}`);
                                         window.electronAPI.sendIframeMouseData({
                                             clientX: e.clientX,
                                             clientY: e.clientY
@@ -805,6 +807,14 @@
                                     this.resizeSlide();
                                 }
                             }, 200);
+
+                            // スライドロードとリサイズ後にカーソルと描画キャンバスの位置を強制更新
+                            if (this.mouseTracker && this.mouseTracker.lastMousePos) {
+                                this.mouseTracker.updateCursor(this.mouseTracker.lastMousePos.x, this.mouseTracker.lastMousePos.y);
+                            }
+                            if (this.drawingManager) {
+                                this.drawingManager.updateCanvasZoom(this.isZoomed, this.zoomFactor, this.zoomCenter, this.panOffset);
+                            }
                             
                             resolve();
                         }, 500); // 300msから500msに延長
@@ -928,6 +938,7 @@
                 // スケールと変換を適用
                 iframe.style.transform = `translate(${translateX}px, ${translateY}px) scale(${finalScale})`;
                 iframe.style.transformOrigin = transformOrigin;
+                this.finalScale = finalScale; // finalScaleを保存
                 
                 console.log(`Container: ${availableWidth}x${availableHeight}, Slide: ${slideWidth}x${slideHeight}, BaseScale: ${baseScale.toFixed(3)}, Zoom: ${this.isZoomed ? this.zoomFactor : this.currentZoom}, FinalScale: ${finalScale.toFixed(3)}`);
             }
@@ -1354,6 +1365,12 @@
                 this.ctx.lineTo(canvasCoords.x, canvasCoords.y);
                 this.ctx.stroke();
                 
+                // デバッグ用: 描画位置に青い点を描画
+                this.ctx.fillStyle = 'blue';
+                this.ctx.beginPath();
+                this.ctx.arc(canvasCoords.x, canvasCoords.y, 2, 0, Math.PI * 2);
+                this.ctx.fill();
+
                 this.lastPos = { x, y };
             }
             
@@ -1416,6 +1433,7 @@
             
             // スクリーン座標を通常時ビューポート基準の標準座標系に変換
             screenToCanvasCoords(screenX, screenY) {
+                console.log(`screenToCanvasCoords called with: screenX=${screenX}, screenY=${screenY}`);
                 const app = window.presentationApp;
                 if (!app) {
                     return { x: screenX, y: screenY };
@@ -1425,33 +1443,37 @@
                 if (!iframe) return { x: screenX, y: screenY };
                 const iframeRect = iframe.getBoundingClientRect();
 
-                // スクリーン座標からiframeのオフセットを引く
-                const relativeX = screenX - iframeRect.left;
-                const relativeY = screenY - iframeRect.top;
+                // screenX, screenYはすでにメインドキュメントの絶対座標
+                // iframe内の相対座標を計算
+                const relativeX = (screenX - iframeRect.left) / app.finalScale;
+                const relativeY = (screenY - iframeRect.top) / app.finalScale;
+
+                console.log(`iframeRect: left=${iframeRect.left}, top=${iframeRect.top}, relativeX=${relativeX}, relativeY=${relativeY}`);
 
                 if (app.isZoomed) {
                     // 拡大時はマウス位置を通常時の座標系に逆変換
                     const container = document.getElementById('slideContent');
                     if (container) {
-                        const containerRect = container.getBoundingClientRect();
+                        // ズーム中心はメインドキュメントの絶対座標
+                        const adjustedZoomCenterX = app.zoomCenter.x;
+                        const adjustedZoomCenterY = app.zoomCenter.y;
                         
-                        // パンオフセットを考慮してズーム中心を調整
-                        const adjustedZoomCenterX = app.zoomCenter.x + app.panOffset.x;
-                        const adjustedZoomCenterY = app.zoomCenter.y + app.panOffset.y;
-                        
-                        // ズーム中心からの相対位置を計算（パンオフセット考慮）
-                        const deltaX = relativeX - (adjustedZoomCenterX - iframeRect.left); // iframe相対座標で計算
-                        const deltaY = relativeY - (adjustedZoomCenterY - iframeRect.top); // iframe相対座標で計算
+                        // ズーム中心からの相対位置を計算
+                        const deltaX = screenX - adjustedZoomCenterX;
+                        const deltaY = screenY - adjustedZoomCenterY;
                         
                         // ズーム倍率で逆算して通常時の座標に変換
-                        const normalizedX = (adjustedZoomCenterX - iframeRect.left) + (deltaX / app.zoomFactor);
-                        const normalizedY = (adjustedZoomCenterY - iframeRect.top) + (deltaY / app.zoomFactor);
+                        const normalizedX = adjustedZoomCenterX + (deltaX / app.zoomFactor);
+                        const normalizedY = adjustedZoomCenterY + (deltaY / app.zoomFactor);
                         
-                        return { x: normalizedX, y: normalizedY };
+                        console.log(`Zoomed: adjustedZoomCenterX=${adjustedZoomCenterX}, adjustedZoomCenterY=${adjustedZoomCenterY}, deltaX=${deltaX}, deltaY=${deltaY}, normalizedX=${normalizedX}, normalizedY=${normalizedY}`);
+                        console.log(`Final canvas coords (zoomed): x=${(normalizedX - iframeRect.left) / app.finalScale}, y=${(normalizedY - iframeRect.top) / app.finalScale}`);
+                        return { x: (normalizedX - iframeRect.left) / app.finalScale, y: (normalizedY - iframeRect.top) / app.finalScale };
                     }
                 }
                 
                 // 通常時はiframe相対座標をそのまま使用
+                console.log(`Final canvas coords (normal): x=${relativeX}, y=${relativeY}`);
                 return { x: relativeX, y: relativeY };
             }
             
@@ -1507,8 +1529,14 @@
                         const iframeRect = iframe.getBoundingClientRect();
                         
                         // iframe内の相対座標をメインドキュメントの絶対座標に変換
-                        const absoluteX = data.clientX + iframeRect.left;
-                        const absoluteY = data.clientY + iframeRect.top;
+                        const app = window.presentationApp;
+                        if (!app) return;
+
+                        // iframe内の相対座標をメインドキュメントの絶対座標に変換
+                        let absoluteX = iframeRect.left + data.clientX * app.finalScale;
+                        let absoluteY = iframeRect.top + data.clientY * app.finalScale;
+
+                        console.log(`MouseTracker onUpdateMousePosition: data.clientX=${data.clientX}, data.clientY=${data.clientY}, iframeRect.left=${iframeRect.left}, iframeRect.top=${iframeRect.top}, absoluteX=${absoluteX}, absoluteY=${absoluteY}`);
 
                         this.updateCursor(absoluteX, absoluteY);
                         const now = Date.now();
@@ -1599,6 +1627,12 @@
                     this.cursor.style.top = y + 'px';
                     this.cursor.style.opacity = '1';
                     this.cursor.style.display = 'block';
+                }
+                // デバッグ用マーカーの位置を更新
+                const debugDot = document.getElementById('debugMousePosition');
+                if (debugDot) {
+                    debugDot.style.left = (x - 4) + 'px'; // マーカーの中心に合わせる
+                    debugDot.style.top = (y - 4) + 'px';
                 }
             }
             
