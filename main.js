@@ -241,6 +241,12 @@ function createMenu() {
                 },
                 { type: 'separator' },
                 {
+                    label: t('menu_go_to_slide'),
+                    submenu: [], // This will be populated dynamically
+                    id: 'goToSlideMenu' // Add an ID for easy access
+                },
+                { type: 'separator' },
+                {
                     label: t('menu_export_pdf'),
                     accelerator: 'CmdOrCtrl+E',
                     click: () => {
@@ -281,7 +287,9 @@ function createMenu() {
 
 // スライドリストを更新する関数
 async function updateGoToSlideMenu() {
-    // This function will be re-implemented to populate the menu with placeholders
+    if (mainWindow) {
+        mainWindow.webContents.send('request-slide-titles');
+    }
 }
 
 function setupGlobalShortcuts() {
@@ -306,6 +314,38 @@ ipcMain.handle('get-localized-string', async (event, key, ...args) => {
 
 ipcMain.handle('get-app-version', async () => {
     return app.getVersion();
+});
+
+// Renderer processからスライドタイトルリストを受信
+ipcMain.on('send-slide-titles', (event, slideTitles) => {
+    console.log('Main process received slide titles:', slideTitles);
+    const menu = Menu.getApplicationMenu();
+    const goToSlideMenuItem = menu.getMenuItemById('goToSlideMenu');
+
+    if (goToSlideMenuItem) {
+        console.log('Go to Slide menu item found.');
+        const submenuItems = slideTitles.map((title, index) => ({
+            label: `${index + 1}: ${title}`,
+            click: () => {
+                if (mainWindow) {
+                    mainWindow.webContents.send('go-to-slide-from-menu', index + 1);
+                }
+            }
+        }));
+        console.log('Submenu items created:', submenuItems);
+        goToSlideMenuItem.submenu = Menu.buildFromTemplate(submenuItems);
+        Menu.setApplicationMenu(menu); // メニューを再設定して変更を反映
+        console.log('Menu updated.');
+    } else {
+        console.error('Go to Slide menu item not found.');
+    }
+});
+
+// Renderer processに特定のスライドへの移動を指示
+ipcMain.on('go-to-slide-by-index', (event, index) => {
+    if (mainWindow) {
+        mainWindow.webContents.send('go-to-slide-from-menu', index);
+    }
 });
 
 // Renderer processに特定のスライドへの移動を指示

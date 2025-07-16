@@ -20,6 +20,7 @@
   "menu_first_slide": "最初のスライド",
   "menu_last_slide": "最後のスライド",
   "menu_export_pdf": "PDFエクスポート",
+  "menu_go_to_slide": "スライドへ移動",
   "dialog_select_slide_directory": "スライドのあるディレクトリを選択してください",
   "dialog_error": "エラー",
   "dialog_no_html_files_found": "選択されたディレクトリにHTMLファイルが見つかりませんでした。",
@@ -38,5 +39,7 @@
   "pdf_chromium_generation_failed": "Chromium PDF生成に失敗しました",
   "pdf_export_failed_alert": "PDFエクスポートに失敗しました: {0}",
   "prompt_go_to_slide": "スライド番号を入力してください (1-{0}):",
-  "alert_invalid_slide_number": "無効なスライド番号です。1から{0}までの数字を入力してください。"
+  "alert_invalid_slide_number": "無効なスライド番号です。1から{0}までの数字を入力してください。",
+  "confirm_button": "移動",
+  "cancel_button": "キャンセル"
 }

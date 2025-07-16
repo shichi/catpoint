@@ -24,8 +24,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // メインプロセスからホイールイベントを受信
     onUpdateWheelData: (callback) => ipcRenderer.on('update-wheel-data', callback),
 
+    // メインプロセスからスライドタイトル要求を受信
+    onRequestSlideTitles: (callback) => ipcRenderer.on('request-slide-titles', callback),
+    // メインプロセスから特定のスライドへの移動指示を受信
+    onGoToSlideFromMenu: (callback) => ipcRenderer.on('go-to-slide-from-menu', callback),
+
     // メインプロセスにメッセージを送信
     sendSlideChanged: (slideNumber) => ipcRenderer.invoke('slide-changed'),
+    sendSlideTitles: (titles) => ipcRenderer.send('send-slide-titles'),
     
     // PDF生成関連
     generatePDF: (options) => ipcRenderer.invoke('generate-pdf', options),

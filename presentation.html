@@ -326,6 +326,82 @@
             font-size: 0.9em;
             margin-top: 10px;
         }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            min-width: 300px;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-content input[type="number"] {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .modal-buttons button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: background 0.3s ease;
+        }
+
+        .modal-buttons button:hover {
+            background: #2563eb;
+        }
+
+        .modal-buttons button#goToSlideCancelBtn {
+            background: #6b7280;
+        }
+
+        .modal-buttons button#goToSlideCancelBtn:hover {
+            background: #4b5563;
+        }
     </style>
 </head>
 <body>
@@ -375,6 +451,18 @@
     <!-- 描画キャンバス -->
     <canvas id="drawingCanvas"></canvas>
 
+    <!-- Go To Slide Dialog -->
+    <div id="goToSlideDialog" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="goToSlideDialogTitle"></h3>
+            <input type="number" id="slideNumberInput" min="1" value="1">
+            <div class="modal-buttons">
+                <button id="goToSlideConfirmBtn"></button>
+                <button id="goToSlideCancelBtn"></button>
+            </div>
+        </div>
+    </div>
+
     <script src="goToSlide.js"></script>
     <script>
         // Electron環境での初期化
@@ -421,6 +509,22 @@
                     window.presentationApp.pdfExporter.updateProgress(data.current, data.total, data.message);
                 }
             });
+
+            // メインプロセスからのスライドタイトル要求に応答
+            window.electronAPI.onRequestSlideTitles(() => {
+                if (window.presentationApp) {
+                    const titles = window.presentationApp.getSlideTitles();
+                    console.log('Renderer sending slide titles:', titles);
+                    window.electronAPI.sendSlideTitles(titles);
+                }
+            });
+
+            // メインプロセスからのスライド移動指示に応答
+            window.electronAPI.onGoToSlideFromMenu((event, index) => {
+                if (window.presentationApp) {
+                    window.presentationApp.goToSlide(index);
+                }
+            });
         }
 
         // Function to set localized strings
@@ -438,6 +542,8 @@
                 console.log('fullscreenBtn set:', document.getElementById('fullscreenBtn').textContent);
                 document.getElementById('pdfExportBtn').textContent = await window.electronAPI.getLocalizedString('menu_export_pdf');
                 console.log('pdfExportBtn set:', document.getElementById('pdfExportBtn').textContent);
+                document.getElementById('goToSlideBtn').textContent = await window.electronAPI.getLocalizedString('menu_go_to_slide');
+                console.log('goToSlideBtn set:', document.getElementById('goToSlideBtn').textContent);
                 document.getElementById('pdfExportTitle').textContent = await window.electronAPI.getLocalizedString('pdf_exporting');
                 console.log('pdfExportTitle set:', document.getElementById('pdfExportTitle').textContent);
             } else {
@@ -502,7 +608,7 @@
                 return {
                     presentation: {
                         title: "プレゼンテーション",
-                        slideDirectory: "./slides",
+                        slideDirectory: "./slides-example",
                         slidePattern: "*.html",
                         totalSlides: null,
                         autoDetectSlides: true,
@@ -1139,13 +1245,14 @@
                 }
                 
                 document.addEventListener('keydown', (e) => {
+                    // If the target is an input field, allow default behavior
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        return;
+                    }
+
                     switch(e.key) {
                         case 'ArrowRight':
                         case ' ':
-                            // If the target is an input field, allow default behavior
-                            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                                return;
-                            }
                             this.nextSlide();
                             break;
                         case 'ArrowLeft':
